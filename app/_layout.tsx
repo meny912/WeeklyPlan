@@ -16,6 +16,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="reader" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="shacharit" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_bottom' }} />
           </Stack>
         </WeeklyPlanProvider>
         </SettingsProvider>
