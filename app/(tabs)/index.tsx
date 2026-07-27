@@ -7,8 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useWeeklyPlan } from '@/hooks/useWeeklyPlan';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { DayCard, ProgressRing } from '@/components';
@@ -16,6 +19,7 @@ import { DAY_KEYS, calcStats, getTodayDayKey } from '@/services/weeklyPlanServic
 import { useTranslation, useDayLabels } from '@/contexts/SettingsContext';
 
 export default function WeeklyScreen() {
+  const router = useRouter();
   const { dayTasks, completions, loading, toggleTask, weekKey } = useWeeklyPlan();
   const { t, language } = useTranslation();
   const dayLabels = useDayLabels();   // reactive – re-renders on language change
@@ -61,6 +65,21 @@ export default function WeeklyScreen() {
             <Text style={styles.subtitle}>{weekLabel}</Text>
           </View>
         </View>
+
+        {/* Shacharit (date-aware siddur) */}
+        <Pressable
+          style={({ pressed }) => [styles.tefillahCard, pressed && styles.tefillahCardPressed]}
+          onPress={() => router.push('/shacharit')}
+        >
+          <View style={styles.tefillahIcon}>
+            <MaterialIcons name="menu-book" size={24} color={Colors.primary} />
+          </View>
+          <View style={styles.tefillahTextWrap}>
+            <Text style={styles.tefillahTitle}>שחרית לחול</Text>
+            <Text style={styles.tefillahSubtitle}>סידור מותאם ליום</Text>
+          </View>
+          <MaterialIcons name="chevron-left" size={26} color={Colors.textSecondary} />
+        </Pressable>
 
         {/* Progress Hero */}
         <View style={styles.progressHero}>
@@ -145,6 +164,44 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
     textAlign: 'right',
+  },
+  tefillahCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  tefillahCardPressed: {
+    backgroundColor: Colors.surfaceElevated,
+    borderColor: Colors.primary,
+  },
+  tefillahIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primaryDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tefillahTextWrap: {
+    flex: 1,
+  },
+  tefillahTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semibold,
+    color: Colors.text,
+    textAlign: 'right',
+  },
+  tefillahSubtitle: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    textAlign: 'right',
+    marginTop: 2,
   },
   progressHero: {
     backgroundColor: Colors.surface,
