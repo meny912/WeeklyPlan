@@ -10,9 +10,11 @@ interface TaskItemProps {
   checked: boolean;
   onToggle: () => void;
   onLongPress?: () => void;
+  /** When set, the leading icon becomes a tappable button that opens a prayer screen. */
+  onOpenTefillah?: () => void;
 }
 
-export function TaskItem({ emoji, title, checked, onToggle, onLongPress }: TaskItemProps) {
+export function TaskItem({ emoji, title, checked, onToggle, onLongPress, onOpenTefillah }: TaskItemProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const checkAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
 
@@ -36,7 +38,13 @@ export function TaskItem({ emoji, title, checked, onToggle, onLongPress }: TaskI
   return (
     <Pressable onPress={handlePress} onLongPress={onLongPress} hitSlop={4}>
       <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }, checked && styles.containerChecked]}>
-        <Text style={styles.emoji}>{emoji}</Text>
+        {onOpenTefillah ? (
+          <Pressable onPress={onOpenTefillah} hitSlop={8} style={styles.tefillahBtn} accessibilityLabel="פתח סידור">
+            <MaterialIcons name="menu-book" size={20} color={Colors.primary} />
+          </Pressable>
+        ) : (
+          <Text style={styles.emoji}>{emoji}</Text>
+        )}
         <Text style={[styles.title, checked && styles.titleChecked]} numberOfLines={1}>
           {title}
         </Text>
@@ -74,6 +82,14 @@ const styles = StyleSheet.create({
   containerChecked: {
     backgroundColor: Colors.primaryDim,
     borderColor: Colors.primary,
+  },
+  tefillahBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primaryDim,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emoji: {
     fontSize: 20,

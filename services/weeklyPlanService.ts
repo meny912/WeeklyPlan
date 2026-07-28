@@ -5,6 +5,16 @@ export interface Task {
   id: string;
   title: string;
   emoji: string;
+  /** If set, this task links to a prayer screen (e.g. 'shacharit'); its icon opens
+   *  the siddur and finishing the prayer auto-completes the task. */
+  tefillah?: string;
+}
+
+/** A task counts as a Shacharit-prayer task if explicitly flagged or titled accordingly. */
+export function getTaskTefillah(task: Task): string | null {
+  if (task.tefillah) return task.tefillah;
+  if (/שחרית/.test(task.title)) return 'shacharit';
+  return null;
 }
 
 // Rich history entry stored per archived week

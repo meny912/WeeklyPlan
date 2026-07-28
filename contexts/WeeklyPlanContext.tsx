@@ -34,6 +34,7 @@ interface WeeklyPlanContextType {
   lastResetAt: number | null;    // unix ms of the last auto-reset, null if none yet
   getTasksForDay: (dayKey: string) => Task[];
   toggleTask: (dayKey: string, taskId: string) => void;
+  markTaskComplete: (dayKey: string, taskId: string) => void;
   addTaskToDay: (dayKey: string, title: string, emoji: string) => void;
   addTaskToAllDays: (title: string, emoji: string) => void;
   removeTaskFromDay: (dayKey: string, taskId: string) => void;
@@ -188,6 +189,20 @@ export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
     [persistCompletions],
   );
 
+  // Idempotent: set a task's completion to true (used when a linked prayer is finished).
+  const markTaskComplete = useCallback(
+    (dayKey: string, taskId: string) => {
+      const key = `${dayKey}-${taskId}`;
+      setCompletions(prev => {
+        if (prev[key]) return prev;
+        const updated = { ...prev, [key]: true };
+        persistCompletions(updated);
+        return updated;
+      });
+    },
+    [persistCompletions],
+  );
+
   const addTaskToDay = useCallback(
     async (dayKey: string, title: string, emoji: string) => {
       const newTask: Task = { id: `task_${Date.now()}`, title, emoji };
@@ -263,6 +278,7 @@ export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
         lastResetAt,
         getTasksForDay,
         toggleTask,
+        markTaskComplete,
         addTaskToDay,
         addTaskToAllDays,
         removeTaskFromDay,

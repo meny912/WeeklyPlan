@@ -5,20 +5,29 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { shacharitChol } from '@/constants/tefillot/shacharitChol';
 import type { Block } from '@/constants/tefillot/types';
 import { getLuachContext, conditionVisible } from '@/services/luachContext';
 import { getTodayHebrew, hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
+import { useWeeklyPlan } from '@/hooks/useWeeklyPlan';
 
 const WEEKDAY_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 export default function ShacharitScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ day?: string; taskId?: string }>();
+  const { markTaskComplete } = useWeeklyPlan();
   const [fontSize, setFontSize] = useState(20);
   const [avelut, setAvelut] = useState(false);
+
+  const linkedToTask = !!(params.day && params.taskId);
+  const handleFinish = () => {
+    if (params.day && params.taskId) markTaskComplete(params.day, params.taskId);
+    router.back();
+  };
 
   const ctx = useMemo(() => getLuachContext(new Date(), { avelut }), [avelut]);
 
@@ -94,6 +103,16 @@ export default function ShacharitScreen() {
         ))}
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
+
+      {/* Finish → mark the linked task complete (or just close) */}
+      <View style={styles.footer}>
+        <Pressable style={styles.finishBtn} onPress={handleFinish}>
+          <MaterialIcons name="check-circle" size={22} color={Colors.background} />
+          <Text style={styles.finishText}>
+            {linkedToTask ? 'סיימתי את התפילה' : 'סגור'}
+          </Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -188,5 +207,27 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: Spacing.md,
     writingDirection: 'rtl',
+  },
+  footer: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  finishBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.lg,
+    paddingVertical: 15,
+  },
+  finishText: {
+    color: Colors.background,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
   },
 });

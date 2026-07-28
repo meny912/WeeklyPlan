@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
-import { Task } from '@/services/weeklyPlanService';
+import { Task, getTaskTefillah } from '@/services/weeklyPlanService';
 import { TaskItem } from './TaskItem';
 import { useTranslation } from '@/contexts/SettingsContext';
 
@@ -18,10 +18,11 @@ interface DayCardProps {
   tasks: Task[];
   completions: Record<string, boolean>;
   onToggle: (dayKey: string, taskId: string) => void;
+  onOpenTefillah?: (dayKey: string, task: Task) => void;
   doneCount: number;
 }
 
-export function DayCard({ dayKey, label, isToday, tasks, completions, onToggle, doneCount }: DayCardProps) {
+export function DayCard({ dayKey, label, isToday, tasks, completions, onToggle, onOpenTefillah, doneCount }: DayCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(isToday);
   const rotateAnim = useRef(new Animated.Value(isToday ? 1 : 0)).current;
@@ -75,6 +76,11 @@ export function DayCard({ dayKey, label, isToday, tasks, completions, onToggle, 
               title={task.title}
               checked={!!completions[`${dayKey}-${task.id}`]}
               onToggle={() => onToggle(dayKey, task.id)}
+              onOpenTefillah={
+                onOpenTefillah && getTaskTefillah(task)
+                  ? () => onOpenTefillah(dayKey, task)
+                  : undefined
+              }
             />
           ))}
           {tasks.length === 0 ? (

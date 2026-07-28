@@ -120,6 +120,9 @@ export default function WeeklyScreen() {
               tasks={dayTaskList}
               completions={completions}
               onToggle={toggleTask}
+              onOpenTefillah={(dk, task) =>
+                router.push({ pathname: '/shacharit', params: { day: dk, taskId: task.id } })
+              }
               doneCount={dayStats.done}
             />
           );
