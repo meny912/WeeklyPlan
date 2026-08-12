@@ -139,6 +139,57 @@ async function fetchHebcalDaily(date: Date): Promise<HebcalItem[]> {
   }
 }
 
+// ─── Sefaria daily calendar (authoritative refs for Rambam / Tanya) ──────
+// Sefaria's /api/calendars returns the exact daily ref for each learning cycle,
+// which is always current — unlike Hebcal's link field (dropped) or a static table.
+const SEFARIA_CAL_PREFIX = 'sefaria_cal_';
+const SEFARIA_CAL_TTL = 1000 * 60 * 60 * 24; // 24h
+
+export interface SefariaDailyRefs {
+  rambam3: string[]; // "Daily Rambam (3 Chapters)" refs (may span two books → 2 items)
+  tanya: string | null;
+}
+
+export async function fetchSefariaDailyRefs(date: Date = new Date()): Promise<SefariaDailyRefs> {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const cacheKey = `${SEFARIA_CAL_PREFIX}${y}-${m}-${d}`;
+
+  try {
+    const cached = await AsyncStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.ts < SEFARIA_CAL_TTL) return parsed.data as SefariaDailyRefs;
+    }
+  } catch {}
+
+  const empty: SefariaDailyRefs = { rambam3: [], tanya: null };
+  try {
+    const url = `https://www.sefaria.org/api/calendars?year=${y}&month=${m}&day=${d}`;
+    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!resp.ok) return empty;
+    const data = await resp.json();
+    const items: any[] = data.calendar_items ?? [];
+    const rambam3: string[] = [];
+    let tanya: string | null = null;
+    for (const it of items) {
+      const en = it?.title?.en ?? '';
+      const ref: string = it?.ref ?? '';
+      if (!ref) continue;
+      if (en === 'Daily Rambam (3 Chapters)') rambam3.push(ref);
+      else if (en === 'Tanya Yomi' || en === 'Tanya') tanya = ref;
+    }
+    const result: SefariaDailyRefs = { rambam3, tanya };
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify({ data: result, ts: Date.now() }));
+    } catch {}
+    return result;
+  } catch {
+    return empty;
+  }
+}
+
 // ─── Tehillim (Psalms) ───────────────────────────────────
 // Official Chabad Chitas daily Tehillim schedule (30 portions by Hebrew day of month)
 const TEHILLIM_PORTIONS: Record<number, number[]> = {
@@ -589,7 +640,19 @@ export function getTanyaPortionForDay(date: Date = new Date()): { ref: string; t
 }
 
 export async function fetchTanyaForDay(date: Date = new Date()): Promise<BookContent> {
-  // ── Primary path: use the static 365-day Mora Shiur schedule (tanyaScheduleService)
+  // ── Authoritative path: Sefaria's daily calendar gives the exact Tanya Yomi ref,
+  //    always current (fixes the "Tanya not updated" bug from the static table).
+  try {
+    const { tanya } = await fetchSefariaDailyRefs(date);
+    if (tanya) {
+      const content = await fetchFromSefaria(tanya);
+      if (content.sections.length > 0) return content;
+    }
+  } catch (calErr) {
+    console.warn('[fetchTanyaForDay] Sefaria calendar path failed:', calErr);
+  }
+
+  // ── Secondary path: the static 365-day Mora Shiur schedule (tanyaScheduleService)
   // getTanyaRefByDate / fetchTanyaEntry are top-level static imports – no dynamic import needed.
   try {
     const scheduleEntry = getTanyaRefByDate(date);
@@ -791,6 +854,26 @@ export async function fetchChumashWithRashiForDay(date: Date = new Date()): Prom
 // ─── Rambam (3 chapters/day) from Hebcal ─────────────────
 // Uses Hebcal's dr3=on to get the correct daily portion for current Hebrew year
 export async function fetchRambamForDay(date: Date = new Date()): Promise<BookContent[]> {
+  // ── Authoritative path: Sefaria's daily calendar returns the exact Rambam refs.
+  //    (Hebcal stopped returning the `link` field, which the legacy path below relied
+  //    on — that's why Rambam showed no text.)
+  try {
+    const { rambam3 } = await fetchSefariaDailyRefs(date);
+    if (rambam3.length > 0) {
+      const results: BookContent[] = [];
+      for (const ref of rambam3) {
+        try {
+          const c = await fetchFromSefaria(ref);
+          if (c.sections.length > 0) results.push(c);
+        } catch {}
+      }
+      if (results.length > 0) return results;
+    }
+  } catch (calErr) {
+    console.warn('[fetchRambamForDay] Sefaria calendar path failed:', calErr);
+  }
+
+  // ── Legacy fallback: Hebcal daily + link parsing (kept in case Sefaria is down)
   try {
     const items = await fetchHebcalDaily(date);
     const rambamItem = items.find(i => i.category === 'dailyRambam3');

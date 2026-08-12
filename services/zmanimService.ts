@@ -77,28 +77,42 @@ export async function fetchZmanim(): Promise<ZmanimResult> {
     }
   } catch {}
 
-  // Request location
-  const { status } = await Location.requestForegroundPermissionsAsync();
+  // Device timezone — REQUIRED by Hebcal's zmanim API. Without tzid the API returns
+  // empty times ("Timezone required"), which the UI wrongly surfaced as "no network".
+  let tzid = 'Asia/Jerusalem';
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) tzid = tz;
+  } catch {}
+
+  // Request location (fully guarded — a location failure must never break zmanim;
+  // we simply fall back to Jerusalem defaults).
   let lat = 31.7683; // Jerusalem default
   let lng = 35.2137;
   let locationName = 'ירושלים';
-
-  if (status === 'granted') {
-    try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      lat = loc.coords.latitude;
-      lng = loc.coords.longitude;
-
-      // Reverse geocode
-      const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-      if (geo.length > 0) {
-        const g = geo[0];
-        locationName = g.city ?? g.region ?? g.country ?? locationName;
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      // getCurrentPositionAsync can hang indefinitely on some devices → race a timeout.
+      const loc = (await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<null>((res) => setTimeout(() => res(null), 8000)),
+      ])) as Location.LocationObject | null;
+      if (loc) {
+        lat = loc.coords.latitude;
+        lng = loc.coords.longitude;
+        try {
+          const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+          if (geo.length > 0) {
+            const g = geo[0];
+            locationName = g.city ?? g.region ?? g.country ?? locationName;
+          }
+        } catch {}
       }
-    } catch {}
-  }
+    }
+  } catch {}
 
-  const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&date=${dateStr}&sec=0`;
+  const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&tzid=${encodeURIComponent(tzid)}&date=${dateStr}&sec=0`;
   const resp = await fetch(url);
   if (!resp.ok) throw new Error('Failed to fetch zmanim');
   const data = await resp.json();
@@ -111,7 +125,7 @@ export async function fetchZmanim(): Promise<ZmanimResult> {
     satDate.setDate(satDate.getDate() + 1);
     const satStr = getDateStr(satDate);
     try {
-      const satResp = await fetch(`https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&date=${satStr}&sec=0`);
+      const satResp = await fetch(`https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&tzid=${encodeURIComponent(tzid)}&date=${satStr}&sec=0`);
       if (satResp.ok) {
         const satData = await satResp.json();
         shabbatExit = satData.times?.tzeit42min;
