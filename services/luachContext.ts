@@ -24,7 +24,21 @@ export interface LuachContext {
   season: 'geshem' | 'tal';
   rain: 'barechAleinu' | 'barchenu'; // birkat-hashanim variant (tal-umatar)
   fast: 'gedalia' | 'asaraBTevet' | null;
+  isChanukah: boolean;
+  isPurim: boolean;
+  omerDay: number | null;  // 1..49 during Sefirat HaOmer, else null
   events: string[];       // hebcal event descriptions (for display / debugging)
+}
+
+/** Day of the Omer (1..49) or null. Day 1 = 16 Nisan. */
+function computeOmerDay(hdate: HDate): number | null {
+  try {
+    const start = new HDate(16, months.NISAN, hdate.getFullYear());
+    const day = hdate.abs() - start.abs() + 1;
+    return day >= 1 && day <= 49 ? day : null;
+  } catch {
+    return null;
+  }
 }
 
 function eventsOn(hdate: HDate): Event[] {
@@ -126,6 +140,9 @@ export function getLuachContext(date: Date = new Date(), opts?: { avelut?: boole
     season: computeSeason(hdate),
     rain: computeRain(date, hdate),
     fast,
+    isChanukah: descs.some((s) => /Chanukah/i.test(s)),
+    isPurim: descs.some((s) => /Purim/i.test(s)),
+    omerDay: computeOmerDay(hdate),
     events: descs,
   };
 }
