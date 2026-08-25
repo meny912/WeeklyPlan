@@ -229,10 +229,10 @@ export function getTehillimChaptersForDay(hebrewDay: number): number[] {
   return TEHILLIM_PORTIONS[hebrewDay] ?? TEHILLIM_PORTIONS[1];
 }
 
-export async function fetchTehillimForDay(hebrewDay: number): Promise<BookContent[]> {
-  const chapters = getTehillimChaptersForDay(hebrewDay);
+// Fetch an arbitrary list of Psalm chapters (used by daily Chitas, Elul, and
+// the user's personal chapters).
+export async function fetchTehillimChapters(chapters: number[]): Promise<BookContent[]> {
   const results: BookContent[] = [];
-
   for (const ch of chapters) {
     try {
       const content = await fetchFromSefaria(`Psalms ${ch}`, `תהלים פרק ${ch}`);
@@ -246,8 +246,11 @@ export async function fetchTehillimForDay(hebrewDay: number): Promise<BookConten
       });
     }
   }
-
   return results;
+}
+
+export async function fetchTehillimForDay(hebrewDay: number): Promise<BookContent[]> {
+  return fetchTehillimChapters(getTehillimChaptersForDay(hebrewDay));
 }
 
 // ─── Tanya ───────────────────────────────────────────────

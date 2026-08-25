@@ -7,6 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Pressable,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,12 +18,14 @@ import {
   BookContent,
   LearningType,
   READER_CONFIGS,
-  fetchTehillimForDay,
+  getTehillimChaptersForDay,
   fetchTanyaForDay,
   fetchChumashWithRashiForDay,
   fetchRambamForDay,
   fetchHayomYomForDay,
 } from '@/services/sefariaService';
+import { getElulTehillim, getPersonalTehillim, savePersonalTehillim } from '@/services/tehillimExtras';
+import { getChapterVerses, chapterGematria, TEHILLIM_ATTRIBUTION } from '@/constants/tehillim/tehillimText';
 // clearAllSefariaCache purges every cached text so the refresh always fetches
 // the correct chapter from the live schedule (fixes stale-cache / wrong-chapter bug)
 import { clearAllSefariaCache } from '@/services/tanyaScheduleService';
@@ -147,6 +151,9 @@ export default function ReaderScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState(18);
+  const [personalOpen, setPersonalOpen] = useState(false);
+  const [personalList, setPersonalList] = useState<number[]>([]);
+  const [chapterInput, setChapterInput] = useState('');
 
   const { hdate } = useMemo(() => getTodayHebrew(), []);
   const hebrewDateLabel = useMemo(
@@ -167,8 +174,24 @@ export default function ReaderScreen() {
 
       switch (type) {
         case 'tehillim': {
-          const portions = await fetchTehillimForDay(hdate.getDate());
-          result = portions;
+          // Local text — offline, instant, no foreign-letter issues.
+          const build = (chapters: number[]): BookContent[] =>
+            chapters.map((ch) => ({
+              title: `Psalms ${ch}`,
+              titleHe: `תהלים · פרק ${chapterGematria(ch)}`,
+              sections: getChapterVerses(ch).map((txt, i) => ({ verse: i + 1, text: txt })),
+              ref: `Psalms ${ch}`,
+            }));
+          const parts: BookContent[] = [];
+          // Chabad "3 chapters a day in Elul" (auto by today's Hebrew date)
+          const elul = getElulTehillim(today);
+          if (elul) parts.push(...build(elul));
+          // Daily portion by day of the month
+          parts.push(...build(getTehillimChaptersForDay(hdate.getDate())));
+          // The user's personal chapters
+          const personal = await getPersonalTehillim();
+          if (personal.length) parts.push(...build(personal));
+          result = parts;
           break;
         }
         case 'tanya': {
@@ -215,6 +238,23 @@ export default function ReaderScreen() {
     loadContent();
   }, [loadContent]);
 
+  // Personal Tehillim chapters
+  useEffect(() => {
+    if (type === 'tehillim') getPersonalTehillim().then(setPersonalList);
+  }, [type]);
+  const addPersonalChapter = () => {
+    const n = parseInt(chapterInput, 10);
+    if (!Number.isInteger(n) || n < 1 || n > 150) return;
+    setPersonalList(prev => [...new Set([...prev, n])].sort((a, b) => a - b));
+    setChapterInput('');
+  };
+  const savePersonalAndReload = async () => {
+    const saved = await savePersonalTehillim(personalList);
+    setPersonalList(saved);
+    setPersonalOpen(false);
+    loadContent();
+  };
+
   const totalVerses = contents.reduce((sum, c) => sum + c.sections.length, 0);
 
   return (
@@ -234,6 +274,17 @@ export default function ReaderScreen() {
             <Text style={styles.headerDate}>{hebrewDateLabel} · {gregDateLabel}</Text>
           </View>
         </View>
+
+        {type === 'tehillim' ? (
+          <Pressable
+            onPress={() => setPersonalOpen(true)}
+            style={[styles.refreshBtn, { backgroundColor: config.color + '18', marginRight: 6 }]}
+            hitSlop={8}
+            accessibilityLabel="הוסף פרקים אישיים"
+          >
+            <MaterialIcons name="playlist-add" size={22} color={config.color} />
+          </Pressable>
+        ) : null}
 
         {/* Refresh button – clears cache and reloads fresh chapter */}
         <Pressable
@@ -312,18 +363,84 @@ export default function ReaderScreen() {
           {/* Source note */}
           <View style={styles.sourceNote}>
             <MaterialIcons name="info-outline" size={14} color={Colors.textMuted} />
-            <Text style={styles.sourceText}>מקור: Sefaria · ספרייה יהודית פתוחה</Text>
+            <Text style={styles.sourceText}>
+              {type === 'tehillim' ? TEHILLIM_ATTRIBUTION : 'מקור: Sefaria · ספרייה יהודית פתוחה'}
+            </Text>
           </View>
 
           <View style={{ height: Spacing.xxl }} />
         </ScrollView>
       )}
+
+      {/* Personal Tehillim chapters modal */}
+      <Modal visible={personalOpen} transparent animationType="fade" onRequestClose={() => setPersonalOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>פרקי תהילים אישיים</Text>
+            <Text style={styles.modalSub}>פרקים שיתווספו בכל יום בסוף התהילים</Text>
+            <View style={styles.modalInputRow}>
+              <Pressable style={styles.modalAddBtn} onPress={addPersonalChapter}>
+                <Text style={styles.modalAddText}>הוסף</Text>
+              </Pressable>
+              <TextInput
+                style={styles.modalInput}
+                value={chapterInput}
+                onChangeText={setChapterInput}
+                keyboardType="number-pad"
+                placeholder="מספר פרק (1–150)"
+                placeholderTextColor={Colors.textMuted}
+                onSubmitEditing={addPersonalChapter}
+                maxLength={3}
+              />
+            </View>
+            <View style={styles.chipsWrap}>
+              {personalList.length === 0 ? (
+                <Text style={styles.modalEmpty}>לא נבחרו פרקים</Text>
+              ) : (
+                personalList.map(n => (
+                  <Pressable key={n} style={styles.chip} onPress={() => setPersonalList(prev => prev.filter(x => x !== n))}>
+                    <Text style={styles.chipText}>פרק {chapterGematria(n)}</Text>
+                    <MaterialIcons name="close" size={14} color={Colors.primary} />
+                  </Pressable>
+                ))
+              )}
+            </View>
+            <View style={styles.modalBtns}>
+              <Pressable style={styles.modalCancel} onPress={() => setPersonalOpen(false)}>
+                <Text style={styles.modalCancelText}>ביטול</Text>
+              </Pressable>
+              <Pressable style={styles.modalSave} onPress={savePersonalAndReload}>
+                <Text style={styles.modalSaveText}>שמור</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
+
+  // Personal-chapters modal
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: Spacing.lg },
+  modalCard: { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.border, gap: Spacing.md },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.text, textAlign: 'right' },
+  modalSub: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'right', marginTop: -6 },
+  modalInputRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  modalInput: { flex: 1, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 10, color: Colors.text, fontSize: FontSize.md, textAlign: 'right' },
+  modalAddBtn: { backgroundColor: Colors.primary, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 11 },
+  modalAddText: { color: Colors.background, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, minHeight: 32 },
+  modalEmpty: { color: Colors.textMuted, fontSize: FontSize.sm, textAlign: 'right', width: '100%' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryDim, borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 5 },
+  chipText: { color: Colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.semibold },
+  modalBtns: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs },
+  modalCancel: { flex: 1, paddingVertical: 12, borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  modalCancelText: { color: Colors.textSecondary, fontWeight: FontWeight.semibold },
+  modalSave: { flex: 1, paddingVertical: 12, borderRadius: Radius.md, alignItems: 'center', backgroundColor: Colors.primary },
+  modalSaveText: { color: Colors.background, fontWeight: FontWeight.bold },
 
   // Header
   header: {
