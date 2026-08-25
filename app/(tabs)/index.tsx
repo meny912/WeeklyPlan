@@ -96,6 +96,21 @@ export default function WeeklyScreen() {
           <MaterialIcons name="chevron-left" size={26} color={Colors.textSecondary} />
         </Pressable>
 
+        {/* Sephardic siddur (full, date-aware categories) */}
+        <Pressable
+          style={({ pressed }) => [styles.tefillahCard, pressed && styles.tefillahCardPressed]}
+          onPress={() => router.push({ pathname: '/siddur', params: { nusach: 'sephardi' } })}
+        >
+          <View style={styles.tefillahIcon}>
+            <MaterialIcons name="menu-book" size={24} color={Colors.primary} />
+          </View>
+          <View style={styles.tefillahTextWrap}>
+            <Text style={styles.tefillahTitle}>סידור ספרדי</Text>
+            <Text style={styles.tefillahSubtitle}>נוסח ספרדים ועדות המזרח · כולל סליחות</Text>
+          </View>
+          <MaterialIcons name="chevron-left" size={26} color={Colors.textSecondary} />
+        </Pressable>
+
         {/* Progress Hero */}
         <View style={styles.progressHero}>
           <ProgressRing

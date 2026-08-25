@@ -1,27 +1,43 @@
 // Powered by OnSpace.AI
-// Chabad (Nusach Ari) siddur screen.
-// List mode: the prayer of the current hour on top, then every relevant category.
-// Reader mode: tap a category → only that category's text (pulled from Sefaria).
+// Siddur screen — supports two nuschaot:
+//   nusach=chabad   → text fetched from Sefaria (chabadSiddurService)
+//   nusach=sephardi → bundled local text (sephardiSiddur)
+// List mode: prayer of the current hour on top, then every relevant category.
+// Reader mode: tap a category → only that category's text.
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
-import { CHABAD_SIDDUR, currentTefillahId, type SiddurCategory, type SiddurTag } from '@/constants/siddur/chabadSiddur';
-import { fetchCategory, type SiddurSection } from '@/services/chabadSiddurService';
+import { CHABAD_SIDDUR, currentTefillahId, type SiddurTag } from '@/constants/siddur/chabadSiddur';
+import { SEPHARDI_SIDDUR, getSephardiCategory, type SiddurBlock } from '@/constants/siddur/sephardiSiddur';
+import { fetchCategory } from '@/services/chabadSiddurService';
 import { getLuachContext } from '@/services/luachContext';
+
+type Nusach = 'chabad' | 'sephardi';
+
+interface CatMeta {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon: string;
+  time?: 'morning' | 'afternoon' | 'evening';
+  tags: SiddurTag[];
+}
 
 export default function SiddurScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ open?: string }>();
+  const params = useLocalSearchParams<{ open?: string; nusach?: string }>();
+  const nusach: Nusach = params.nusach === 'sephardi' ? 'sephardi' : 'chabad';
   const [openId, setOpenId] = useState<string | null>(params.open ?? null);
   const [fontSize, setFontSize] = useState(20);
 
   const ctx = useMemo(() => getLuachContext(new Date()), []);
   const nowId = useMemo(() => currentTefillahId(new Date()), []);
+  const catalog: CatMeta[] = nusach === 'sephardi' ? SEPHARDI_SIDDUR : CHABAD_SIDDUR;
+  const title = nusach === 'sephardi' ? 'סידור ספרדי' : 'סידור חב״ד';
 
-  // Which date-aware tags are active today.
   const activeTags = useMemo<Set<SiddurTag>>(() => {
     const s = new Set<SiddurTag>(['always']);
     if (ctx.isRoshChodesh) s.add('roshChodesh');
@@ -29,21 +45,28 @@ export default function SiddurScreen() {
     if (ctx.omerDay != null) s.add('omer');
     if (ctx.isChanukah) s.add('chanukah');
     if (ctx.isPurim) s.add('purim');
+    if (ctx.fast != null) s.add('fast');
     return s;
   }, [ctx]);
 
   const visible = useMemo(
-    () => CHABAD_SIDDUR.filter((c) => c.tags.some((t) => activeTags.has(t))),
-    [activeTags],
+    () => catalog.filter((c) => c.tags.some((t) => activeTags.has(t))),
+    [catalog, activeTags],
   );
 
   const openCat = visible.find((c) => c.id === openId) ?? null;
-
   if (openCat) {
-    return <CategoryReader category={openCat} fontSize={fontSize} setFontSize={setFontSize} onBack={() => setOpenId(null)} />;
+    return (
+      <CategoryReader
+        nusach={nusach}
+        category={openCat}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        onBack={() => setOpenId(null)}
+      />
+    );
   }
 
-  // Prayer-of-the-hour card + the rest of the categories.
   const hourCat = visible.find((c) => c.id === nowId);
   const rest = visible.filter((c) => c.id !== nowId);
 
@@ -53,7 +76,7 @@ export default function SiddurScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <MaterialIcons name="arrow-forward" size={26} color={Colors.text} />
         </Pressable>
-        <Text style={styles.title}>סידור חב״ד</Text>
+        <Text style={styles.title}>{title}</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -74,7 +97,7 @@ export default function SiddurScreen() {
   );
 }
 
-function CategoryRow({ category, highlight, onPress }: { category: SiddurCategory; highlight?: boolean; onPress: () => void }) {
+function CategoryRow({ category, highlight, onPress }: { category: CatMeta; highlight?: boolean; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -93,34 +116,48 @@ function CategoryRow({ category, highlight, onPress }: { category: SiddurCategor
 }
 
 function CategoryReader({
+  nusach,
   category,
   fontSize,
   setFontSize,
   onBack,
 }: {
-  category: SiddurCategory;
+  nusach: Nusach;
+  category: CatMeta;
   fontSize: number;
   setFontSize: (f: (n: number) => number) => void;
   onBack: () => void;
 }) {
-  const [sections, setSections] = useState<SiddurSection[] | null>(null);
+  const [blocks, setBlocks] = useState<SiddurBlock[] | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    setSections(null);
+    setBlocks(null);
     setError(false);
-    fetchCategory(category)
-      .then((s) => {
+    if (nusach === 'sephardi') {
+      const b = getSephardiCategory(category.id);
+      if (b.length === 0) setError(true);
+      else setBlocks(b);
+      return;
+    }
+    // Chabad → Sefaria fetch, flattened into blocks
+    fetchCategory(CHABAD_SIDDUR.find((c) => c.id === category.id)!)
+      .then((sections) => {
         if (!alive) return;
-        if (s.length === 0) setError(true);
-        else setSections(s);
+        if (sections.length === 0) return setError(true);
+        const b: SiddurBlock[] = [];
+        for (const s of sections) {
+          b.push({ k: 'h', t: s.heading });
+          for (const line of s.lines) b.push({ k: 't', t: line });
+        }
+        setBlocks(b);
       })
       .catch(() => alive && setError(true));
     return () => {
       alive = false;
     };
-  }, [category]);
+  }, [nusach, category]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -139,7 +176,7 @@ function CategoryReader({
         </View>
       </View>
 
-      {sections === null && !error && (
+      {blocks === null && !error && (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingText}>טוען את הטקסט…</Text>
@@ -147,23 +184,32 @@ function CategoryReader({
       )}
       {error && (
         <View style={styles.center}>
-          <Text style={styles.errorText}>לא ניתן לטעון את הטקסט.{'\n'}בדוק את חיבור האינטרנט ונסה שוב.</Text>
+          <Text style={styles.errorText}>לא ניתן לטעון את הטקסט.{'\n'}נסה שוב מאוחר יותר.</Text>
         </View>
       )}
-      {sections && (
+      {blocks && (
         <ScrollView contentContainerStyle={styles.readerContent} showsVerticalScrollIndicator={false}>
-          {sections.map((sec, si) => (
-            <View key={si}>
-              <View style={styles.headingWrap}>
-                <Text style={styles.heading}>{sec.heading}</Text>
-              </View>
-              {sec.lines.map((line, li) => (
-                <Text key={li} style={[styles.text, { fontSize, lineHeight: fontSize * 1.85 }]}>
-                  {line}
+          {blocks.map((b, i) => {
+            if (b.k === 'h') {
+              return (
+                <View key={i} style={styles.headingWrap}>
+                  <Text style={styles.heading}>{b.t}</Text>
+                </View>
+              );
+            }
+            if (b.k === 'i') {
+              return (
+                <Text key={i} style={styles.instruction}>
+                  {b.t}
                 </Text>
-              ))}
-            </View>
-          ))}
+              );
+            }
+            return (
+              <Text key={i} style={[styles.text, { fontSize, lineHeight: fontSize * 1.85 }]}>
+                {b.t}
+              </Text>
+            );
+          })}
           <View style={{ height: Spacing.xxl }} />
         </ScrollView>
       )}
@@ -235,6 +281,14 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     textAlign: 'center',
+    writingDirection: 'rtl',
+  },
+  instruction: {
+    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+    fontStyle: 'italic',
+    textAlign: 'right',
+    marginVertical: Spacing.xs,
     writingDirection: 'rtl',
   },
   text: {

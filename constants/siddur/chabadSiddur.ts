@@ -14,7 +14,8 @@ export type SiddurTag =
   | 'cholHamoed'
   | 'omer'
   | 'chanukah'
-  | 'purim';
+  | 'purim'
+  | 'fast';
 
 export interface SiddurSectionRef {
   ref: string;      // Sefaria ref (fetched via chabadSiddurService)
