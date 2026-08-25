@@ -25,8 +25,7 @@ import { getTanyaRefByDate } from '@/services/tanyaScheduleService';
 import { getDailyLearning } from '@/services/dailyLearningService';
 import { getTodayHebrew, hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
 import { getHayomYomText } from '@/constants/hayomyom';
-import { CHABAD_SIDDUR, currentTefillahId, type SiddurCategory, type SiddurTag } from '@/constants/siddur/chabadSiddur';
-import { getLuachContext } from '@/services/luachContext';
+import { CHABAD_SIDDUR, currentTefillahId, type SiddurCategory } from '@/constants/siddur/chabadSiddur';
 import { useTranslation, useDayLabels } from '@/contexts/SettingsContext';
 
 const DAY_KEYS_ORDER = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -316,24 +315,13 @@ export default function TodayScreen() {
     try { return getDailyLearning(new Date()); } catch { return []; }
   }, [hdate]);
 
-  // ── Chabad siddur categories relevant to today (shown above daily learning) ──
+  // ── The three daily prayers (Shacharit / Mincha / Maariv), above the daily learning ──
   const siddurHourId = useMemo(() => currentTefillahId(new Date()), []);
   const siddurCategories = useMemo(() => {
-    try {
-      const c = getLuachContext(new Date());
-      const active = new Set<SiddurTag>(['always']);
-      if (c.isRoshChodesh) active.add('roshChodesh');
-      if (c.isCholHamoed) active.add('cholHamoed');
-      if (c.omerDay != null) active.add('omer');
-      if (c.isChanukah) active.add('chanukah');
-      if (c.isPurim) active.add('purim');
-      const vis = CHABAD_SIDDUR.filter(cat => cat.tags.some(t => active.has(t)));
-      // Put the prayer-of-the-hour first.
-      return vis.sort((a, b) => (a.id === siddurHourId ? -1 : b.id === siddurHourId ? 1 : 0));
-    } catch {
-      return [];
-    }
-  }, [hdate, siddurHourId]);
+    const three = CHABAD_SIDDUR.filter(cat => cat.time != null);
+    // Prayer-of-the-hour first.
+    return three.sort((a, b) => (a.id === siddurHourId ? -1 : b.id === siddurHourId ? 1 : 0));
+  }, [siddurHourId]);
 
   const tanyaScheduleEntry = useMemo(() => {
     try { return getTanyaRefByDate(new Date()); } catch { return null; }
