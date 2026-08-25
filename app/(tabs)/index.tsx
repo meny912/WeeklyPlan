@@ -66,21 +66,6 @@ export default function WeeklyScreen() {
           </View>
         </View>
 
-        {/* Shacharit (date-aware siddur) */}
-        <Pressable
-          style={({ pressed }) => [styles.tefillahCard, pressed && styles.tefillahCardPressed]}
-          onPress={() => router.push('/shacharit')}
-        >
-          <View style={styles.tefillahIcon}>
-            <MaterialIcons name="menu-book" size={24} color={Colors.primary} />
-          </View>
-          <View style={styles.tefillahTextWrap}>
-            <Text style={styles.tefillahTitle}>שחרית לחול</Text>
-            <Text style={styles.tefillahSubtitle}>סידור מותאם ליום</Text>
-          </View>
-          <MaterialIcons name="chevron-left" size={26} color={Colors.textSecondary} />
-        </Pressable>
-
         {/* Chabad siddur (full, date-aware categories) */}
         <Pressable
           style={({ pressed }) => [styles.tefillahCard, pressed && styles.tefillahCardPressed]}
@@ -150,8 +135,8 @@ export default function WeeklyScreen() {
               tasks={dayTaskList}
               completions={completions}
               onToggle={toggleTask}
-              onOpenTefillah={(dk, task) =>
-                router.push({ pathname: '/shacharit', params: { day: dk, taskId: task.id } })
+              onOpenTefillah={() =>
+                router.push({ pathname: '/siddur', params: { nusach: 'sephardi', open: 'shacharit' } })
               }
               doneCount={dayStats.done}
             />
