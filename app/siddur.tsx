@@ -5,7 +5,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { CHABAD_SIDDUR, currentTefillahId, type SiddurCategory, type SiddurTag } from '@/constants/siddur/chabadSiddur';
@@ -14,7 +14,8 @@ import { getLuachContext } from '@/services/luachContext';
 
 export default function SiddurScreen() {
   const router = useRouter();
-  const [openId, setOpenId] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ open?: string }>();
+  const [openId, setOpenId] = useState<string | null>(params.open ?? null);
   const [fontSize, setFontSize] = useState(20);
 
   const ctx = useMemo(() => getLuachContext(new Date()), []);

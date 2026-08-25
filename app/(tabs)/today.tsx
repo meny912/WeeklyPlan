@@ -25,6 +25,8 @@ import { getTanyaRefByDate } from '@/services/tanyaScheduleService';
 import { getDailyLearning } from '@/services/dailyLearningService';
 import { getTodayHebrew, hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
 import { getHayomYomText } from '@/constants/hayomyom';
+import { CHABAD_SIDDUR, currentTefillahId, type SiddurCategory, type SiddurTag } from '@/constants/siddur/chabadSiddur';
+import { getLuachContext } from '@/services/luachContext';
 import { useTranslation, useDayLabels } from '@/contexts/SettingsContext';
 
 const DAY_KEYS_ORDER = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -187,6 +189,40 @@ const catStyles = StyleSheet.create({
   previewText: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'right', lineHeight: 18, fontStyle: 'italic' },
 });
 
+// ─── Prayer Row (Chabad siddur categories, shown above daily learning) ──
+function PrayerRow({ category, highlight, onPress }: { category: SiddurCategory; highlight?: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [prayerStyles.row, highlight && prayerStyles.rowHi, pressed && { opacity: 0.82 }]}>
+      <View style={[prayerStyles.icon, highlight && prayerStyles.iconHi]}>
+        <MaterialIcons name={category.icon as any} size={20} color={highlight ? Colors.background : Colors.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={prayerStyles.title}>{category.title}</Text>
+        {!!category.subtitle && <Text style={prayerStyles.sub} numberOfLines={1}>{category.subtitle}</Text>}
+      </View>
+      {highlight && <Text style={prayerStyles.nowPill}>עכשיו</Text>}
+      <MaterialIcons name="chevron-left" size={22} color={Colors.textSecondary} />
+    </Pressable>
+  );
+}
+
+const prayerStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.sm + 2,
+    marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border,
+  },
+  rowHi: { borderColor: Colors.primary, backgroundColor: Colors.surfaceElevated },
+  icon: { width: 40, height: 40, borderRadius: Radius.md, backgroundColor: Colors.primaryDim, alignItems: 'center', justifyContent: 'center' },
+  iconHi: { backgroundColor: Colors.primary },
+  title: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right' },
+  sub: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'right', marginTop: 1 },
+  nowPill: {
+    fontSize: FontSize.xs, color: Colors.primary, backgroundColor: 'rgba(245,166,35,0.12)',
+    paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.full, overflow: 'hidden',
+  },
+});
+
 // ─── Section Header ────────────────────────────────────────
 function SectionHeader({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) {
   return (
@@ -279,6 +315,25 @@ export default function TodayScreen() {
   const learningItems = useMemo(() => {
     try { return getDailyLearning(new Date()); } catch { return []; }
   }, [hdate]);
+
+  // ── Chabad siddur categories relevant to today (shown above daily learning) ──
+  const siddurHourId = useMemo(() => currentTefillahId(new Date()), []);
+  const siddurCategories = useMemo(() => {
+    try {
+      const c = getLuachContext(new Date());
+      const active = new Set<SiddurTag>(['always']);
+      if (c.isRoshChodesh) active.add('roshChodesh');
+      if (c.isCholHamoed) active.add('cholHamoed');
+      if (c.omerDay != null) active.add('omer');
+      if (c.isChanukah) active.add('chanukah');
+      if (c.isPurim) active.add('purim');
+      const vis = CHABAD_SIDDUR.filter(cat => cat.tags.some(t => active.has(t)));
+      // Put the prayer-of-the-hour first.
+      return vis.sort((a, b) => (a.id === siddurHourId ? -1 : b.id === siddurHourId ? 1 : 0));
+    } catch {
+      return [];
+    }
+  }, [hdate, siddurHourId]);
 
   const tanyaScheduleEntry = useMemo(() => {
     try { return getTanyaRefByDate(new Date()); } catch { return null; }
@@ -394,6 +449,21 @@ export default function TodayScreen() {
                 </View>
                 <Text style={styles.inspirationText}>{hayomYomPreview}</Text>
               </Pressable>
+            ) : null}
+
+            {/* Prayers (Chabad siddur) — above the daily learning */}
+            {siddurCategories.length > 0 ? (
+              <>
+                <SectionHeader icon="🕍" title="תפילות" subtitle="סידור חב״ד · מותאם ליום" />
+                {siddurCategories.map(cat => (
+                  <PrayerRow
+                    key={cat.id}
+                    category={cat}
+                    highlight={cat.id === siddurHourId}
+                    onPress={() => router.push({ pathname: '/siddur', params: { open: cat.id } })}
+                  />
+                ))}
+              </>
             ) : null}
 
             <SectionHeader
