@@ -40,6 +40,7 @@ interface InlineGroup {
   start: string[];
   end?: string[];
   single?: boolean; // fold exactly the one start block (self-contained passage)
+  span?: number;    // how far to scan for the end-anchor (default MAXFOLD/END_NEAR)
 }
 
 // Order matters — the first matching start wins and consumes its range.
@@ -47,9 +48,12 @@ const INLINE_GROUPS: InlineGroup[] = [
   { id: 'chatzi-kaddish', title: 'חצי קדיש', start: ['אומר החזן חצי קדיש', 'אומר החזן קדיש'], end: ['ברכו את', 'קש וברכותיה', 'יוצר אור', 'המעריב ערבים'] },
   { id: 'barchu', title: 'ברכו', start: ['ברכו את יהוה המברך', 'ברכו את יהוה'], end: ['יוצר אור', 'המעריב ערבים', 'קש וברכותיה'] },
   { id: 'kaddish', title: 'קדיש', start: ['יתגדל ויתקדש שמה רבא'], single: true },
+  { id: 'ata-chonantanu', title: 'אתה חוננתנו (מוצ"ש)', start: ['במוצאי שבת ויום טוב מוסיפים אתה חוננתנו', 'אתה חוננתנו יהוה אלהינו', 'אתה חוננתנו'], end: ['חננו מאתך', 'חכמה בינה ודעת מאתך'] },
   { id: 'kedusha', title: 'קדושה (נקדישך)', start: ['נקדישך ונעריצך', 'נקדש את שמך', 'כתר יתנו לך', 'נקדישך ונקדישך'], end: ['לדור ודור', 'אתה קדוש ושמך קדוש', 'לדר ודר'] },
   { id: 'yaaleh-veyavo', title: 'יעלה ויבוא', start: ['בראש חדש ובחול המועד מוסיפים', 'אלהינו ואלהי אבותינו יעלה ויב', 'יעלה ויבא'], end: ['ואתה ברחמיך', 'ותחזינה עינינו'] },
-  { id: 'al-hanisim', title: 'על הניסים', start: ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן', 'ועל הנסים'], end: ['ועל כלם', 'וכל החיים יודוך'] },
+  // Al HaNisim runs from "ועל הנסים" through בימי מתתיהו (Chanukah) and בימי מרדכי
+  // (Purim) up to "ועל כולם" — a long span in the Chabad text, hence span: 18.
+  { id: 'al-hanisim', title: 'על הניסים', start: ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן', 'ועל הנסים'], end: ['ועל כלם', 'ועל כולם', 'וכל החיים יודוך'], span: 18 },
   { id: 'birkat-kohanim', title: 'ברכת כהנים', start: ['אלהינו ואלהי אבותינו ברכנו בברכה המשלשת', 'ברכנו בברכה המשלשת בתורה'], end: ['שים שלום', 'שלום רב'] },
   { id: 'nachem', title: 'נחם (ט"ב)', start: ['נחם יהוה אלהינו את אבלי ציון', 'בתשעה באב מוסיפים נחם', 'תשעה באב מוסיפים נחם'], end: ['בונה ירושלים', 'מנחם ציון'] },
   { id: 'aneinu', title: 'עננו (תענית)', start: ['עננו אבינו עננו', 'עננו יהוה עננו', 'עננו יהוה אלהינו', 'עננו בורא עולם', 'ענינו בורא עולם'], end: ['כי אתה שומע', 'העונה בעת צרה', 'רפאנו יהוה'] },
@@ -126,17 +130,19 @@ export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
         continue;
       }
       // Scan forward for a clean boundary.
+      const cap = g.span ?? MAXFOLD;
+      const near = g.span ?? END_NEAR;
       let j = i + 1;
       let endHit = -1;
       let headHit = -1;
-      while (j < N && j - i <= MAXFOLD) {
+      while (j < N && j - i <= cap) {
         const nb = blocks[j];
         if (nb.k === 'h') { headHit = j; break; }
         if (includesAny(norm(nb.t), g.end)) { endHit = j; break; }
         j++;
       }
       let foldEnd = -1; // exclusive
-      if (endHit >= 0 && endHit - i <= END_NEAR) foldEnd = endHit;
+      if (endHit >= 0 && endHit - i <= near) foldEnd = endHit;
       else if (headHit >= 0 && headHit - i <= HEAD_NEAR) foldEnd = headHit;
 
       if (foldEnd >= 0) {
