@@ -25,7 +25,6 @@ import { getTanyaRefByDate } from '@/services/tanyaScheduleService';
 import { getDailyLearning } from '@/services/dailyLearningService';
 import { getTodayHebrew, hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
 import { getHayomYomText } from '@/constants/hayomyom';
-import { CHABAD_SIDDUR, currentTefillahId, type SiddurCategory } from '@/constants/siddur/chabadSiddur';
 import { useTranslation, useDayLabels } from '@/contexts/SettingsContext';
 
 const DAY_KEYS_ORDER = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -189,17 +188,16 @@ const catStyles = StyleSheet.create({
 });
 
 // ─── Prayer Row (Chabad siddur categories, shown above daily learning) ──
-function PrayerRow({ category, highlight, onPress }: { category: SiddurCategory; highlight?: boolean; onPress: () => void }) {
+function PrayerRow({ title, subtitle, icon, onPress }: { title: string; subtitle?: string; icon: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [prayerStyles.row, highlight && prayerStyles.rowHi, pressed && { opacity: 0.82 }]}>
-      <View style={[prayerStyles.icon, highlight && prayerStyles.iconHi]}>
-        <MaterialIcons name={category.icon as any} size={20} color={highlight ? Colors.background : Colors.primary} />
+    <Pressable onPress={onPress} style={({ pressed }) => [prayerStyles.row, pressed && { opacity: 0.82 }]}>
+      <View style={prayerStyles.icon}>
+        <MaterialIcons name={icon as any} size={20} color={Colors.primary} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={prayerStyles.title}>{category.title}</Text>
-        {!!category.subtitle && <Text style={prayerStyles.sub} numberOfLines={1}>{category.subtitle}</Text>}
+        <Text style={prayerStyles.title}>{title}</Text>
+        {!!subtitle && <Text style={prayerStyles.sub} numberOfLines={1}>{subtitle}</Text>}
       </View>
-      {highlight && <Text style={prayerStyles.nowPill}>עכשיו</Text>}
       <MaterialIcons name="chevron-left" size={22} color={Colors.textSecondary} />
     </Pressable>
   );
@@ -314,14 +312,6 @@ export default function TodayScreen() {
   const learningItems = useMemo(() => {
     try { return getDailyLearning(new Date()); } catch { return []; }
   }, [hdate]);
-
-  // ── The three daily prayers (Shacharit / Mincha / Maariv), above the daily learning ──
-  const siddurHourId = useMemo(() => currentTefillahId(new Date()), []);
-  const siddurCategories = useMemo(() => {
-    const three = CHABAD_SIDDUR.filter(cat => cat.time != null);
-    // Prayer-of-the-hour first.
-    return three.sort((a, b) => (a.id === siddurHourId ? -1 : b.id === siddurHourId ? 1 : 0));
-  }, [siddurHourId]);
 
   const tanyaScheduleEntry = useMemo(() => {
     try { return getTanyaRefByDate(new Date()); } catch { return null; }
@@ -439,20 +429,20 @@ export default function TodayScreen() {
               </Pressable>
             ) : null}
 
-            {/* Prayers (Chabad siddur) — above the daily learning */}
-            {siddurCategories.length > 0 ? (
-              <>
-                <SectionHeader icon="🕍" title="תפילות" subtitle="סידור חב״ד · מותאם ליום" />
-                {siddurCategories.map(cat => (
-                  <PrayerRow
-                    key={cat.id}
-                    category={cat}
-                    highlight={cat.id === siddurHourId}
-                    onPress={() => router.push({ pathname: '/siddur', params: { open: cat.id } })}
-                  />
-                ))}
-              </>
-            ) : null}
+            {/* Siddurim — above the daily learning */}
+            <SectionHeader icon="📖" title="סידורים" subtitle="נוסח חב״ד וספרדי" />
+            <PrayerRow
+              title="סידור חב״ד"
+              subtitle="שחרית · מנחה · ערבית · ברכות ועוד"
+              icon="auto-stories"
+              onPress={() => router.push('/siddur')}
+            />
+            <PrayerRow
+              title="סידור ספרדי"
+              subtitle="נוסח ספרדים ועדות המזרח · כולל סליחות"
+              icon="menu-book"
+              onPress={() => router.push({ pathname: '/siddur', params: { nusach: 'sephardi' } })}
+            />
 
             <SectionHeader
               icon="📚"
