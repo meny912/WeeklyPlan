@@ -40,16 +40,25 @@ async function setCache(key: string, data: BookContent): Promise<void> {
   } catch {}
 }
 
-// ─── Strip HTML / nikud markers from Sefaria text ────────
+// ─── Strip HTML / footnotes / stray Latin from Sefaria text ────────
+// All texts we fetch (Chumash, Rashi, Tanya, Rambam, HaYom Yom) are Hebrew, so
+// any Latin letters are noise — footnote markers, French/Latin glosses (לעז),
+// or English source references. Drop footnote content and any Latin outright.
 function stripHtml(html: string): string {
   if (!html) return '';
   return html
+    .replace(/<sup[^>]*>[\s\S]*?<\/sup>/gi, '')            // footnote markers
+    .replace(/<i[^>]*class="footnote"[^>]*>[\s\S]*?<\/i>/gi, '') // footnote bodies
     .replace(/<[^>]*>/g, '')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
+    .replace(/&thinsp;/g, ' ')
     .replace(/&#x2F;/g, '/')
+    .replace(/&[a-z]+;/gi, ' ')                            // any leftover entity
+    .replace(/[A-Za-z]/g, '')                              // stray Latin letters
+    .replace(/[([][^֐-׿0-9]*[)\]]/g, ' ')        // brackets left with no Hebrew inside
     .replace(/\s+/g, ' ')
     .trim();
 }

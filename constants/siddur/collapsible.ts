@@ -50,8 +50,9 @@ const INLINE_GROUPS: InlineGroup[] = [
   { id: 'kedusha', title: 'קדושה (נקדישך)', start: ['נקדישך ונעריצך', 'נקדש את שמך', 'כתר יתנו לך', 'נקדישך ונקדישך'], end: ['לדור ודור', 'אתה קדוש ושמך קדוש', 'לדר ודר'] },
   { id: 'yaaleh-veyavo', title: 'יעלה ויבוא', start: ['בראש חדש ובחול המועד מוסיפים', 'אלהינו ואלהי אבותינו יעלה ויב', 'יעלה ויבא'], end: ['ואתה ברחמיך', 'ותחזינה עינינו'] },
   { id: 'al-hanisim', title: 'על הניסים', start: ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן', 'ועל הנסים'], end: ['ועל כלם', 'וכל החיים יודוך'] },
+  { id: 'birkat-kohanim', title: 'ברכת כהנים', start: ['אלהינו ואלהי אבותינו ברכנו בברכה המשלשת', 'ברכנו בברכה המשלשת בתורה'], end: ['שים שלום', 'שלום רב'] },
   { id: 'nachem', title: 'נחם (ט"ב)', start: ['נחם יהוה אלהינו את אבלי ציון', 'בתשעה באב מוסיפים נחם', 'תשעה באב מוסיפים נחם'], end: ['בונה ירושלים', 'מנחם ציון'] },
-  { id: 'aneinu', title: 'עננו (תענית)', start: ['עננו אבינו עננו', 'עננו יהוה עננו', 'ענינו בורא עולם'], end: ['כי אתה שומע', 'העונה בעת צרה'] },
+  { id: 'aneinu', title: 'עננו (תענית)', start: ['עננו אבינו עננו', 'עננו יהוה עננו', 'עננו יהוה אלהינו', 'עננו בורא עולם', 'ענינו בורא עולם'], end: ['כי אתה שומע', 'העונה בעת צרה', 'רפאנו יהוה'] },
   { id: 'zochreinu', title: 'זכרנו לחיים (עשי"ת)', start: ['זכרנו לחיים מלך חפץ בחיים'], single: true },
   { id: 'mi-chamocha', title: 'מי כמוך (עשי"ת)', start: ['מי כמוך אב הרחמים'], single: true },
   { id: 'uchtov', title: 'וכתוב לחיים (עשי"ת)', start: ['וכתוב לחיים טובים'], single: true },
@@ -61,6 +62,20 @@ const INLINE_GROUPS: InlineGroup[] = [
 const MAXFOLD = 10; // never fold more than this many blocks under one label
 const HEAD_NEAR = 4; // a heading may close a fold only if it is this close
 const END_NEAR = 8; // an end-anchor may close a fold only if it is this close
+
+// Whole SECTIONS (a heading + its body up to a clean boundary) that fold under
+// their own heading. Only a small allowlist — a heading here folds only when a
+// clean end-anchor or the next heading is found within maxFold; otherwise the
+// heading renders normally (never fold an unbounded span).
+interface HeadingGroup {
+  match: string;
+  end: string[];
+  maxFold: number;
+}
+const HEADING_GROUPS: HeadingGroup[] = [
+  // Birkat Kohanim — said by the shaliach tzibur daily; folds until "שים שלום".
+  { match: 'ברכת כהנים', end: ['שים שלום', 'שלום רב', 'שלום עליך'], maxFold: 20 },
+];
 
 function matchInlineStart(t: string): InlineGroup | null {
   const n = norm(t);
@@ -76,6 +91,28 @@ export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
     const b = blocks[i];
 
     if (b.k === 'h') {
+      const hn = norm(b.t);
+      const hg = HEADING_GROUPS.find((g) => hn.includes(norm(g.match)));
+      if (hg) {
+        let j = i + 1;
+        let endHit = -1;
+        let headHit = -1;
+        while (j < N && j - i <= hg.maxFold) {
+          const nb = blocks[j];
+          if (nb.k === 'h') { headHit = j; break; }
+          if (includesAny(norm(nb.t), hg.end)) { endHit = j; break; }
+          j++;
+        }
+        let foldEnd = -1; // exclusive
+        if (endHit >= 0) foldEnd = endHit;
+        else if (headHit >= 0) foldEnd = headHit;
+        if (foldEnd > i + 1) {
+          items.push({ kind: 'group', id: `hg-${i}`, title: b.t, blocks: blocks.slice(i, foldEnd) });
+          i = foldEnd;
+          continue;
+        }
+        // no clean boundary → render the heading normally (never fold unbounded)
+      }
       items.push({ kind: 'heading', block: b });
       i++;
       continue;
