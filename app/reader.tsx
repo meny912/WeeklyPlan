@@ -35,6 +35,13 @@ import {
   hebrewMonthDisplay,
 } from '@/services/hebrewCalendarService';
 
+// Reading surface: white paper, black ink (independent of the app theme).
+const PAPER = '#FFFFFF';
+const INK = '#1A1A1A';
+const RUBRIC = '#5F5F5F';
+const GREEN = '#1B7A3D';
+const HAIRLINE = '#E5E5E5';
+
 // ─── Verse Component ──────────────────────────────────────
 function VerseRow({ verse, text, fontSize }: { verse: number; text: string; fontSize: number }) {
   return (
@@ -53,7 +60,7 @@ const verseStyles = StyleSheet.create({
   },
   num: {
     fontSize: FontSize.xs,
-    color: Colors.primary,
+    color: GREEN,
     fontWeight: FontWeight.bold,
     minWidth: 24,
     marginTop: 4,
@@ -61,7 +68,7 @@ const verseStyles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    color: Colors.text,
+    color: INK,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
@@ -72,8 +79,8 @@ function BookSection({ content, accentColor, fontSize }: { content: BookContent;
   const hebrewRef = content.ref && /^[\u05d0-\u05ea]/.test(content.ref) ? content.ref : null;
   return (
     <View style={secStyles.container}>
-      <View style={[secStyles.header, { borderLeftColor: accentColor }]}>
-        <Text style={[secStyles.title, { color: accentColor }]}>{content.titleHe || content.title}</Text>
+      <View style={[secStyles.header, { borderLeftColor: GREEN }]}>
+        <Text style={[secStyles.title, { color: INK }]}>{content.titleHe || content.title}</Text>
         {hebrewRef ? (
           <Text style={secStyles.ref}>{hebrewRef}</Text>
         ) : null}
@@ -114,11 +121,11 @@ function FontSizeControl({ size, onIncrease, onDecrease }: {
   return (
     <View style={fsStyles.container}>
       <Pressable onPress={onIncrease} style={fsStyles.btn} hitSlop={8}>
-        <MaterialIcons name="text-increase" size={20} color={Colors.textSecondary} />
+        <MaterialIcons name="text-increase" size={20} color={RUBRIC} />
       </Pressable>
       <Text style={fsStyles.label}>{size}</Text>
       <Pressable onPress={onDecrease} style={fsStyles.btn} hitSlop={8}>
-        <MaterialIcons name="text-decrease" size={20} color={Colors.textSecondary} />
+        <MaterialIcons name="text-decrease" size={20} color={RUBRIC} />
       </Pressable>
     </View>
   );
@@ -130,13 +137,13 @@ const fsStyles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: Radius.sm,
-    backgroundColor: Colors.surface,
+    backgroundColor: '#F2F2F2',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: HAIRLINE,
   },
-  label: { fontSize: FontSize.sm, color: Colors.textSecondary, minWidth: 24, textAlign: 'center' },
+  label: { fontSize: FontSize.sm, color: RUBRIC, minWidth: 24, textAlign: 'center' },
 });
 
 // ─── Main Screen ──────────────────────────────────────────
@@ -154,6 +161,9 @@ export default function ReaderScreen() {
   const [personalOpen, setPersonalOpen] = useState(false);
   const [personalList, setPersonalList] = useState<number[]>([]);
   const [chapterInput, setChapterInput] = useState('');
+  // Tehillim has two sub-categories: the daily portion (+ personal chapters) and
+  // the Elul "3 a day" schedule. Default to the daily portion.
+  const [tehillimMode, setTehillimMode] = useState<'daily' | 'elul'>('daily');
 
   const { hdate } = useMemo(() => getTodayHebrew(), []);
   const hebrewDateLabel = useMemo(
@@ -183,22 +193,41 @@ export default function ReaderScreen() {
               ref: `Psalms ${ch}`,
             }));
           const parts: BookContent[] = [];
-          // Chabad "3 chapters a day in Elul" (auto by today's Hebrew date)
-          const elul = getElulTehillim(today);
-          if (elul) parts.push(...build(elul));
-          // Daily portion by day of the month (Psalm 119 is split across days 25/26)
-          for (const p of getDailyTehillim(hdate.getDate())) {
-            const verses = getChapterVersesRange(p.chapter, p.from, p.to);
-            parts.push({
-              title: `Psalms ${p.chapter}`,
-              titleHe: `תהלים · פרק ${chapterGematria(p.chapter)}${p.label ? ` · ${p.label}` : ''}`,
-              sections: verses.map((txt, i) => ({ verse: (p.from ?? 1) + i, text: txt })),
-              ref: `Psalms ${p.chapter}`,
-            });
+          if (tehillimMode === 'elul') {
+            // Chabad "3 chapters a day in Elul" (auto by today's Hebrew date)
+            const elul = getElulTehillim(today);
+            if (elul) parts.push(...build(elul));
+            else
+              parts.push({
+                title: 'Elul',
+                titleHe: 'תהלים לחודש אלול',
+                sections: [{ verse: 1, text: 'החלוקה של שלושה פרקים ליום מוצגת בחודש אלול בלבד.' }],
+                ref: 'Elul',
+              });
+          } else {
+            // Daily portion by day of the month (Psalm 119 is split across days 25/26)
+            for (const p of getDailyTehillim(hdate.getDate())) {
+              const verses = getChapterVersesRange(p.chapter, p.from, p.to);
+              parts.push({
+                title: `Psalms ${p.chapter}`,
+                titleHe: `תהלים · פרק ${chapterGematria(p.chapter)}${p.label ? ` · ${p.label}` : ''}`,
+                sections: verses.map((txt, i) => ({ verse: (p.from ?? 1) + i, text: txt })),
+                ref: `Psalms ${p.chapter}`,
+              });
+            }
+            // The user's personal chapters — appended to the daily portion
+            const personal = await getPersonalTehillim();
+            if (personal.length) {
+              for (const ch of personal) {
+                parts.push({
+                  title: `Psalms ${ch}`,
+                  titleHe: `תהלים · פרק ${chapterGematria(ch)} · אישי`,
+                  sections: getChapterVerses(ch).map((txt, i) => ({ verse: i + 1, text: txt })),
+                  ref: `Psalms ${ch}`,
+                });
+              }
+            }
           }
-          // The user's personal chapters
-          const personal = await getPersonalTehillim();
-          if (personal.length) parts.push(...build(personal));
           result = parts;
           break;
         }
@@ -230,7 +259,7 @@ export default function ReaderScreen() {
     } finally {
       setLoading(false);
     }
-  }, [type, hdate]);
+  }, [type, hdate, tehillimMode]);
 
   // ─── Force refresh: clears cache then reloads ─────────
   const forceRefresh = useCallback(async () => {
@@ -270,7 +299,7 @@ export default function ReaderScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <MaterialIcons name="arrow-forward" size={24} color={Colors.text} />
+          <MaterialIcons name="arrow-forward" size={24} color={INK} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -324,6 +353,32 @@ export default function ReaderScreen() {
         </View>
       ) : null}
 
+      {/* Tehillim: two sub-categories + prominent add-personal button */}
+      {type === 'tehillim' ? (
+        <>
+          <View style={styles.modeRow}>
+            <Pressable
+              onPress={() => setTehillimMode('daily')}
+              style={[styles.modePill, tehillimMode === 'daily' && styles.modePillActive]}
+            >
+              <Text style={[styles.modePillText, tehillimMode === 'daily' && styles.modePillTextActive]}>תהלים יומי</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setTehillimMode('elul')}
+              style={[styles.modePill, tehillimMode === 'elul' && styles.modePillActive]}
+            >
+              <Text style={[styles.modePillText, tehillimMode === 'elul' && styles.modePillTextActive]}>תהלים לחודש אלול</Text>
+            </Pressable>
+          </View>
+          {tehillimMode === 'daily' ? (
+            <Pressable onPress={() => setPersonalOpen(true)} style={styles.addPersonalBtn}>
+              <MaterialIcons name="playlist-add" size={18} color={GREEN} />
+              <Text style={styles.addPersonalText}>הוסף פרקי תהילים אישיים</Text>
+            </Pressable>
+          ) : null}
+        </>
+      ) : null}
+
       {/* Content */}
       {loading ? (
         <View style={styles.centerBox}>
@@ -370,7 +425,7 @@ export default function ReaderScreen() {
 
           {/* Source note */}
           <View style={styles.sourceNote}>
-            <MaterialIcons name="info-outline" size={14} color={Colors.textMuted} />
+            <MaterialIcons name="info-outline" size={14} color={RUBRIC} />
             <Text style={styles.sourceText}>
               {type === 'tehillim' ? TEHILLIM_ATTRIBUTION : 'מקור: Sefaria · ספרייה יהודית פתוחה'}
             </Text>
@@ -429,7 +484,7 @@ export default function ReaderScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1, backgroundColor: PAPER },
 
   // Personal-chapters modal
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: Spacing.lg },
@@ -458,8 +513,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderBottomColor: HAIRLINE,
+    backgroundColor: PAPER,
   },
   backBtn: {
     width: 40,
@@ -467,7 +522,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: '#F2F2F2',
   },
   refreshBtn: {
     width: 40,
@@ -494,12 +549,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.text,
+    color: INK,
     textAlign: 'right',
   },
   headerDate: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    color: RUBRIC,
     textAlign: 'right',
   },
 
@@ -510,13 +565,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: '#F7F7F5',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: HAIRLINE,
   },
   metaText: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    color: RUBRIC,
     flex: 1,
     textAlign: 'right',
   },
@@ -527,7 +582,7 @@ const styles = StyleSheet.create({
   },
   metaCount: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
+    color: RUBRIC,
   },
 
   // Loading / Error
@@ -540,18 +595,18 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: RUBRIC,
     textAlign: 'center',
   },
   loadingSubText: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    color: RUBRIC,
     textAlign: 'center',
   },
   errorIcon: { fontSize: 48 },
   errorText: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: RUBRIC,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -568,8 +623,44 @@ const styles = StyleSheet.create({
   },
 
   // Scroll
-  scroll: { flex: 1 },
-  content: { padding: Spacing.lg },
+  scroll: { flex: 1, backgroundColor: PAPER },
+  content: { padding: Spacing.lg, backgroundColor: PAPER },
+
+  // Tehillim mode switch (יומי / אלול)
+  modeRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    backgroundColor: PAPER,
+  },
+  modePill: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: GREEN,
+    backgroundColor: PAPER,
+  },
+  modePillActive: { backgroundColor: GREEN },
+  modePillText: { color: GREEN, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
+  modePillTextActive: { color: '#FFFFFF' },
+  addPersonalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    paddingVertical: 11,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: GREEN,
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(27,122,61,0.06)',
+  },
+  addPersonalText: { color: GREEN, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
 
   // Bismillah
   bismillah: {
@@ -591,7 +682,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingTop: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: HAIRLINE,
   },
-  sourceText: { fontSize: FontSize.xs, color: Colors.textMuted },
+  sourceText: { fontSize: FontSize.xs, color: RUBRIC },
 });

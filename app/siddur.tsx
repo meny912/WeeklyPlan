@@ -14,6 +14,15 @@ import { CHABAD_SIDDUR, currentTefillahId, type SiddurTag } from '@/constants/si
 import { SEPHARDI_SIDDUR, getSephardiCategory, type SiddurBlock } from '@/constants/siddur/sephardiSiddur';
 import { fetchCategory } from '@/services/chabadSiddurService';
 import { getLuachContext } from '@/services/luachContext';
+import { buildRenderItems } from '@/constants/siddur/collapsible';
+
+// Reading surface: white paper, black ink, green for the collapsible headers
+// (passages not said in everyday solo prayer). Independent of the app theme.
+const PAPER = '#FFFFFF';
+const INK = '#1A1A1A';
+const RUBRIC = '#5F5F5F';
+const GREEN = '#1B7A3D';
+const GREEN_BG = 'rgba(27,122,61,0.09)';
 
 type Nusach = 'chabad' | 'sephardi';
 
@@ -130,6 +139,8 @@ function CategoryReader({
 }) {
   const [blocks, setBlocks] = useState<SiddurBlock[] | null>(null);
   const [error, setError] = useState(false);
+  // Which collapsible groups are open (all collapsed by default).
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
@@ -159,56 +170,77 @@ function CategoryReader({
     };
   }, [nusach, category]);
 
+  const items = useMemo(() => (blocks ? buildRenderItems(blocks) : []), [blocks]);
+
+  const renderBlock = (b: SiddurBlock, key: React.Key) => {
+    if (b.k === 'h') {
+      return (
+        <View key={key} style={rstyles.headingWrap}>
+          <Text style={rstyles.heading}>{b.t}</Text>
+        </View>
+      );
+    }
+    if (b.k === 'i') {
+      return (
+        <Text key={key} style={rstyles.instruction}>
+          {b.t}
+        </Text>
+      );
+    }
+    return (
+      <Text key={key} style={[rstyles.text, { fontSize, lineHeight: fontSize * 1.85 }]}>
+        {b.t}
+      </Text>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
+    <SafeAreaView style={rstyles.safe} edges={['top']}>
+      <View style={rstyles.header}>
         <Pressable onPress={onBack} hitSlop={12} style={styles.backBtn}>
-          <MaterialIcons name="arrow-forward" size={26} color={Colors.text} />
+          <MaterialIcons name="arrow-forward" size={26} color={INK} />
         </Pressable>
-        <Text style={styles.title}>{category.title}</Text>
+        <Text style={rstyles.title}>{category.title}</Text>
         <View style={styles.fontControls}>
           <Pressable onPress={() => setFontSize((f) => Math.max(14, f - 2))} hitSlop={8}>
-            <MaterialIcons name="text-decrease" size={22} color={Colors.textSecondary} />
+            <MaterialIcons name="text-decrease" size={22} color={RUBRIC} />
           </Pressable>
           <Pressable onPress={() => setFontSize((f) => Math.min(34, f + 2))} hitSlop={8}>
-            <MaterialIcons name="text-increase" size={22} color={Colors.textSecondary} />
+            <MaterialIcons name="text-increase" size={22} color={RUBRIC} />
           </Pressable>
         </View>
       </View>
 
       {blocks === null && !error && (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>טוען את הטקסט…</Text>
+          <ActivityIndicator size="large" color={GREEN} />
+          <Text style={rstyles.loadingText}>טוען את הטקסט…</Text>
         </View>
       )}
       {error && (
         <View style={styles.center}>
-          <Text style={styles.errorText}>לא ניתן לטעון את הטקסט.{'\n'}נסה שוב מאוחר יותר.</Text>
+          <Text style={rstyles.errorText}>לא ניתן לטעון את הטקסט.{'\n'}נסה שוב מאוחר יותר.</Text>
         </View>
       )}
       {blocks && (
-        <ScrollView contentContainerStyle={styles.readerContent} showsVerticalScrollIndicator={false}>
-          {blocks.map((b, i) => {
-            if (b.k === 'h') {
+        <ScrollView style={rstyles.scroll} contentContainerStyle={rstyles.readerContent} showsVerticalScrollIndicator={false}>
+          {items.map((it, idx) => {
+            if (it.kind === 'group') {
+              const open = !!expanded[it.id];
               return (
-                <View key={i} style={styles.headingWrap}>
-                  <Text style={styles.heading}>{b.t}</Text>
+                <View key={it.id} style={rstyles.group}>
+                  <Pressable
+                    onPress={() => setExpanded((p) => ({ ...p, [it.id]: !p[it.id] }))}
+                    style={({ pressed }) => [rstyles.groupHeader, pressed && { opacity: 0.7 }]}
+                  >
+                    <MaterialIcons name={open ? 'expand-more' : 'chevron-left'} size={22} color={GREEN} />
+                    <Text style={rstyles.groupHeaderText}>{it.title}</Text>
+                  </Pressable>
+                  {open && <View style={rstyles.groupBody}>{it.blocks.map((b, k) => renderBlock(b, `${it.id}-${k}`))}</View>}
                 </View>
               );
             }
-            if (b.k === 'i') {
-              return (
-                <Text key={i} style={styles.instruction}>
-                  {b.t}
-                </Text>
-              );
-            }
-            return (
-              <Text key={i} style={[styles.text, { fontSize, lineHeight: fontSize * 1.85 }]}>
-                {b.t}
-              </Text>
-            );
+            return renderBlock(it.block, it.kind === 'heading' ? `h-${idx}` : `b-${idx}`);
           })}
           <View style={{ height: Spacing.xxl }} />
         </ScrollView>
@@ -216,6 +248,52 @@ function CategoryReader({
     </SafeAreaView>
   );
 }
+
+const rstyles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: PAPER },
+  scroll: { flex: 1, backgroundColor: PAPER },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    backgroundColor: PAPER,
+  },
+  title: { color: INK, fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  loadingText: { color: RUBRIC, fontSize: FontSize.sm },
+  errorText: { color: RUBRIC, fontSize: FontSize.md, textAlign: 'center', lineHeight: 24 },
+  readerContent: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, backgroundColor: PAPER },
+  headingWrap: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+    borderBottomWidth: 2,
+    borderBottomColor: GREEN,
+    paddingBottom: Spacing.xs,
+  },
+  heading: { color: INK, fontSize: FontSize.xl, fontWeight: FontWeight.bold, textAlign: 'center', writingDirection: 'rtl' },
+  instruction: { color: RUBRIC, fontSize: FontSize.sm, fontStyle: 'italic', textAlign: 'right', marginVertical: Spacing.xs, writingDirection: 'rtl' },
+  text: { color: INK, textAlign: 'right', marginBottom: Spacing.md, writingDirection: 'rtl' },
+  group: {
+    marginVertical: Spacing.xs,
+    borderWidth: 1,
+    borderColor: GREEN,
+    borderRadius: Radius.md,
+    overflow: 'hidden',
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: GREEN_BG,
+  },
+  groupHeaderText: { color: GREEN, fontSize: FontSize.md, fontWeight: FontWeight.bold, textAlign: 'right', flex: 1 },
+  groupBody: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.sm, backgroundColor: PAPER },
+});
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
