@@ -18,14 +18,14 @@ import {
   BookContent,
   LearningType,
   READER_CONFIGS,
-  getTehillimChaptersForDay,
   fetchTanyaForDay,
   fetchChumashWithRashiForDay,
   fetchRambamForDay,
   fetchHayomYomForDay,
 } from '@/services/sefariaService';
 import { getElulTehillim, getPersonalTehillim, savePersonalTehillim } from '@/services/tehillimExtras';
-import { getChapterVerses, chapterGematria, TEHILLIM_ATTRIBUTION } from '@/constants/tehillim/tehillimText';
+import { getChapterVerses, getChapterVersesRange, chapterGematria, TEHILLIM_ATTRIBUTION } from '@/constants/tehillim/tehillimText';
+import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
 // clearAllSefariaCache purges every cached text so the refresh always fetches
 // the correct chapter from the live schedule (fixes stale-cache / wrong-chapter bug)
 import { clearAllSefariaCache } from '@/services/tanyaScheduleService';
@@ -186,8 +186,16 @@ export default function ReaderScreen() {
           // Chabad "3 chapters a day in Elul" (auto by today's Hebrew date)
           const elul = getElulTehillim(today);
           if (elul) parts.push(...build(elul));
-          // Daily portion by day of the month
-          parts.push(...build(getTehillimChaptersForDay(hdate.getDate())));
+          // Daily portion by day of the month (Psalm 119 is split across days 25/26)
+          for (const p of getDailyTehillim(hdate.getDate())) {
+            const verses = getChapterVersesRange(p.chapter, p.from, p.to);
+            parts.push({
+              title: `Psalms ${p.chapter}`,
+              titleHe: `תהלים · פרק ${chapterGematria(p.chapter)}${p.label ? ` · ${p.label}` : ''}`,
+              sections: verses.map((txt, i) => ({ verse: (p.from ?? 1) + i, text: txt })),
+              ref: `Psalms ${p.chapter}`,
+            });
+          }
           // The user's personal chapters
           const personal = await getPersonalTehillim();
           if (personal.length) parts.push(...build(personal));

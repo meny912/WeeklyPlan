@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HDate, Sedra } from '@hebcal/core';
 // Static import – avoids dynamic-import failures that caused the wrong chapter to appear
 import { getTanyaRefByDate, fetchTanyaEntry } from '@/services/tanyaScheduleService';
+import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
 
 // ─── Types ────────────────────────────────────────────────
 export interface TextSection {
@@ -191,66 +192,20 @@ export async function fetchSefariaDailyRefs(date: Date = new Date()): Promise<Se
 }
 
 // ─── Tehillim (Psalms) ───────────────────────────────────
-// Official Chabad Chitas daily Tehillim schedule (30 portions by Hebrew day of month)
-const TEHILLIM_PORTIONS: Record<number, number[]> = {
-  1:  [1,2,3,4,5,6,7,8,9],
-  2:  [10,11,12,13,14,15,16,17],
-  3:  [18,19,20,21,22],
-  4:  [23,24,25,26,27,28,29],
-  5:  [30,31,32,33,34],
-  6:  [35,36,37,38],
-  7:  [39,40,41,42,43],
-  8:  [44,45,46,47,48],
-  9:  [49,50,51,52,53,54],
-  10: [55,56,57,58,59],
-  11: [60,61,62,63,64,65],
-  12: [66,67,68],
-  13: [69,70,71],
-  14: [72,73,74,75,76],
-  15: [77,78],
-  16: [79,80,81,82],
-  17: [83,84,85,86,87],
-  18: [88,89],
-  19: [90,91,92,93,94,95,96],
-  20: [97,98,99,100,101,102,103],
-  21: [104,105],
-  22: [106,107],
-  23: [108,109,110,111,112],
-  24: [113,114,115,116,117,118],
-  25: [119],
-  26: [120,121,122,123,124,125,126,127,128,129,130,131,132,133,134],
-  27: [135,136,137,138,139,140,141,142],
-  28: [143,144,145,146,147],
-  29: [148,149,150],
-  30: [148,149,150],
-};
-
+// The Tehillim text is served locally (offline) from constants/tehillim.
+// The daily division ("מחולק לימי החודש") lives in constants/tehillim/tehillimSchedule.
+// This helper returns just the chapter numbers for a Hebrew day of month, kept
+// in sync with that single source so the daily-learning card stays consistent.
 export function getTehillimChaptersForDay(hebrewDay: number): number[] {
-  return TEHILLIM_PORTIONS[hebrewDay] ?? TEHILLIM_PORTIONS[1];
-}
-
-// Fetch an arbitrary list of Psalm chapters (used by daily Chitas, Elul, and
-// the user's personal chapters).
-export async function fetchTehillimChapters(chapters: number[]): Promise<BookContent[]> {
-  const results: BookContent[] = [];
-  for (const ch of chapters) {
-    try {
-      const content = await fetchFromSefaria(`Psalms ${ch}`, `תהלים פרק ${ch}`);
-      results.push(content);
-    } catch {
-      results.push({
-        title: `Psalms ${ch}`,
-        titleHe: `תהלים פרק ${ch}`,
-        sections: [{ verse: 1, text: 'לא ניתן לטעון את הטקסט. בדוק את חיבור האינטרנט.' }],
-        ref: `Psalms ${ch}`,
-      });
+  const seen = new Set<number>();
+  const out: number[] = [];
+  for (const p of getDailyTehillim(hebrewDay)) {
+    if (!seen.has(p.chapter)) {
+      seen.add(p.chapter);
+      out.push(p.chapter);
     }
   }
-  return results;
-}
-
-export async function fetchTehillimForDay(hebrewDay: number): Promise<BookContent[]> {
-  return fetchTehillimChapters(getTehillimChaptersForDay(hebrewDay));
+  return out;
 }
 
 // ─── Tanya ───────────────────────────────────────────────

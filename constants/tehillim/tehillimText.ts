@@ -12,6 +12,18 @@ export function getChapterVerses(chapter: number): string[] {
   return TEHILLIM[String(chapter)] ?? [];
 }
 
+/**
+ * Verses of a chapter, optionally limited to a 1-based inclusive verse range.
+ * Used for the daily division where Psalm 119 is split across two days.
+ */
+export function getChapterVersesRange(chapter: number, from?: number, to?: number): string[] {
+  const all = getChapterVerses(chapter);
+  if (from == null && to == null) return all;
+  const start = Math.max(1, from ?? 1);
+  const end = Math.min(all.length, to ?? all.length);
+  return all.slice(start - 1, end);
+}
+
 const ONES = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
 const TENS = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
 
