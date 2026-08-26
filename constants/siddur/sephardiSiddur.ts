@@ -1,8 +1,8 @@
 // Powered by OnSpace.AI
 // Sephardic (נוסח ספרדים ועדות המזרח) siddur — local text, offline.
-// Parsed from the user's siddur file; content in sephardiText.json as ordered
+// Parsed from the user's siddur file; content in ./sephardiData.ts as ordered
 // blocks: k = 'h' heading | 'i' instruction/rubric | 't' prayer text.
-import DATA from './sephardiText.json';
+import DATA from './sephardiData';
 import type { SiddurTime, SiddurTag } from './chabadSiddur';
 
 export interface SiddurBlock {

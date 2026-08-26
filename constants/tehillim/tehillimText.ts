@@ -1,11 +1,13 @@
 // Powered by OnSpace.AI
 // Local Tehillim text (all 150 chapters, full nikud, cantillation removed).
-// Source: Tanach text (Westminster Leningrad Codex via תורת אמת / ויקיטקסט /
-// J. Alan Groves Center), licensed CC BY-NC-SA 2.5 — attribution required,
-// non-commercial. Offline, so no API and no foreign-letter rendering issues.
-import DATA from './tehillim.json';
+// Source: the user's own "תהילים מחולק לימי החודש" file. Offline, so no API and
+// no foreign-letter rendering issues.
+// The text lives in ./tehillimData (a .ts module, not a .json import): the large
+// .json import failed in the OnSpace/Metro build and silently returned empty
+// text ("לא נמצא תוכן להיום"). A .ts module is always bundled.
+import TEHILLIM_DATA from './tehillimData';
 
-const TEHILLIM: Record<string, string[]> = DATA as Record<string, string[]>;
+const TEHILLIM: Record<string, string[]> = TEHILLIM_DATA;
 
 /** Verses of a chapter (1..150). */
 export function getChapterVerses(chapter: number): string[] {
