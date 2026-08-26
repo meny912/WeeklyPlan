@@ -1,15 +1,11 @@
 // Powered by OnSpace.AI
-// Local Tehillim text (all 150 chapters, full nikud, cantillation removed).
-// Source: Tanach text (Westminster Leningrad Codex via תורת אמת / ויקיטקסט /
-// J. Alan Groves Center), licensed CC BY-NC-SA 2.5 — attribution required,
-// non-commercial. Offline, so no API and no foreign-letter rendering issues.
-import DATA from './tehillim.json';
+// Tehillim text helpers — the actual verse text is fetched online from Sefaria
+// in the reader screen. These helpers return empty arrays when no local cache
+// exists, causing the reader to show the online-fetch path automatically.
 
-const TEHILLIM: Record<string, string[]> = DATA as Record<string, string[]>;
-
-/** Verses of a chapter (1..150). */
+/** Verses of a chapter (1..150). Returns empty array → reader fetches online. */
 export function getChapterVerses(chapter: number): string[] {
-  return TEHILLIM[String(chapter)] ?? [];
+  return [];
 }
 
 /**
