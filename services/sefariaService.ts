@@ -4,6 +4,7 @@ import { HDate, Sedra } from '@hebcal/core';
 // Static import – avoids dynamic-import failures that caused the wrong chapter to appear
 import { getTanyaRefByDate, fetchTanyaEntry } from '@/services/tanyaScheduleService';
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
+import { getLocalTanya } from '@/services/tanyaOffline';
 
 // ─── Types ────────────────────────────────────────────────
 export interface TextSection {
@@ -607,8 +608,13 @@ export function getTanyaPortionForDay(date: Date = new Date()): { ref: string; t
 }
 
 export async function fetchTanyaForDay(date: Date = new Date()): Promise<BookContent> {
-  // ── Authoritative path: Sefaria's daily calendar gives the exact Tanya Yomi ref,
-  //    always current (fixes the "Tanya not updated" bug from the static table).
+  // ── Primary path: fully OFFLINE, leap-year-aware local schedule + text.
+  //    Correct for both regular and leap Hebrew years (תקנת אדמו"ר הריי"צ),
+  //    which fixes the "Tanya not updated" bug and needs no network.
+  const local = getLocalTanya(date);
+  if (local && local.sections.length > 0) return local;
+
+  // ── Fallback: Sefaria's daily calendar (only if the local lookup ever misses).
   try {
     const { tanya } = await fetchSefariaDailyRefs(date);
     if (tanya) {
