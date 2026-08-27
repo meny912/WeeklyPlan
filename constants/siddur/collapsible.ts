@@ -24,7 +24,9 @@ export type RenderItem =
 // bracketed rubrics, punctuation and extra spaces → consonants only.
 function norm(s: string): string {
   return s
-    .replace(/[֑-ׇ]/g, '')
+    .replace(/[֑-ׇ]/g, '')       // nikud + cantillation
+    .replace(/[׳״]/g, '')        // geresh / gershayim
+    .replace(/יהוה/g, 'יי')       // unify the divine name (Chabad writes יי, Sephardi יהוה)
     .replace(/[()[\]{}"'.,:;|\-–־׃׀]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -41,6 +43,8 @@ interface InlineGroup {
   end?: string[];
   single?: boolean; // fold exactly the one start block (self-contained passage)
   span?: number;    // how far to scan for the end-anchor (default MAXFOLD/END_NEAR)
+  maxLen?: number;  // for single folds: skip if the block is longer (avoids folding
+                    // a long daily blessing that merely CONTAINS the anchor phrase)
 }
 
 // Order matters — the first matching start wins and consumes its range.
@@ -48,7 +52,7 @@ const INLINE_GROUPS: InlineGroup[] = [
   { id: 'chatzi-kaddish', title: 'חצי קדיש', start: ['אומר החזן חצי קדיש', 'אומר החזן קדיש'], end: ['ברכו את', 'קש וברכותיה', 'יוצר אור', 'המעריב ערבים'] },
   { id: 'barchu', title: 'ברכו', start: ['ברכו את יהוה המברך', 'ברכו את יהוה'], end: ['יוצר אור', 'המעריב ערבים', 'קש וברכותיה'] },
   { id: 'kaddish', title: 'קדיש', start: ['יתגדל ויתקדש שמה רבא'], single: true },
-  { id: 'ata-chonantanu', title: 'אתה חוננתנו (מוצ"ש)', start: ['במוצאי שבת ויום טוב מוסיפים אתה חוננתנו', 'אתה חוננתנו יהוה אלהינו', 'אתה חוננתנו'], end: ['חננו מאתך', 'חכמה בינה ודעת מאתך'] },
+  { id: 'ata-chonantanu', title: 'אתה חוננתנו (מוצ"ש)', start: ['במוצאי שבת ויום טוב מוסיפים אתה חוננתנו', 'במוצאי שבת ויום טוב אומרים', 'אתה חוננתנו יי אלהינו', 'אתה חוננתנו למדע', 'אתה חוננתנו'], end: ['חננו מאתך', 'חכמה בינה ודעת מאתך', 'אתה חונן לאדם דעת'] },
   // Long tachanun added only on Monday & Thursday, up to the kaddish that follows.
   { id: 'tachanun-monthu', title: 'תחנון לשני וחמישי', start: ['בימי שני וחמישי מוסיפים', 'בימים שני וחמישי מוסיפים'], end: ['יתגדל ויתקדש שמה רבא'], span: 24 },
   { id: 'kedusha', title: 'קדושה (נקדישך)', start: ['נקדישך ונעריצך', 'נקדש את שמך', 'כתר יתנו לך', 'נקדישך ונקדישך'], end: ['לדור ודור', 'אתה קדוש ושמך קדוש', 'לדר ודר'] },
@@ -57,12 +61,16 @@ const INLINE_GROUPS: InlineGroup[] = [
   // (Purim) up to "ועל כולם" — a long span in the Chabad text, hence span: 18.
   { id: 'al-hanisim', title: 'על הניסים', start: ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן', 'ועל הנסים'], end: ['ועל כלם', 'ועל כולם', 'וכל החיים יודוך'], span: 18 },
   { id: 'birkat-kohanim', title: 'ברכת כהנים', start: ['אלהינו ואלהי אבותינו ברכנו בברכה המשלשת', 'ברכנו בברכה המשלשת בתורה'], end: ['שים שלום', 'שלום רב'] },
-  { id: 'nachem', title: 'נחם (ט"ב)', start: ['נחם יהוה אלהינו את אבלי ציון', 'בתשעה באב מוסיפים נחם', 'תשעה באב מוסיפים נחם'], end: ['בונה ירושלים', 'מנחם ציון'] },
-  { id: 'aneinu', title: 'עננו (תענית)', start: ['עננו אבינו עננו', 'עננו יהוה עננו', 'עננו יהוה אלהינו', 'עננו בורא עולם', 'ענינו בורא עולם'], end: ['כי אתה שומע', 'העונה בעת צרה', 'רפאנו יהוה'] },
-  { id: 'zochreinu', title: 'זכרנו לחיים (עשי"ת)', start: ['זכרנו לחיים מלך חפץ בחיים'], single: true },
-  { id: 'mi-chamocha', title: 'מי כמוך (עשי"ת)', start: ['מי כמוך אב הרחמים'], single: true },
-  { id: 'uchtov', title: 'וכתוב לחיים (עשי"ת)', start: ['וכתוב לחיים טובים'], single: true },
-  { id: 'bsefer', title: 'בספר חיים (עשי"ת)', start: ['בספר חיים ברכה ושלום'], single: true },
+  { id: 'nachem', title: 'נחם (ט"ב)', start: ['נחם יי אלהינו את אבלי ציון', 'נחם יי אלהינו', 'במנחת תשעה באב נחם', 'בתשעה באב מוסיפים נחם', 'תשעה באב מוסיפים נחם'], end: ['בונה ירושלים', 'מנחם ציון'] },
+  { id: 'aneinu', title: 'עננו (תענית)', start: ['עננו אבינו עננו', 'עננו יי עננו', 'עננו יי אלהינו', 'עננו ביום צום', 'עננו בורא עולם', 'ענינו בורא עולם'], end: ['כי אתה שומע', 'העונה בעת צרה', 'רפאנו יי'] },
+  // Aseret Yemei Teshuva insertions — short standalone lines; maxLen guards against
+  // folding a long daily blessing that merely contains the phrase (e.g. Sephardi גבורות).
+  { id: 'zochreinu', title: 'זכרנו לחיים (עשי"ת)', start: ['זכרנו לחיים מלך חפץ בחיים'], single: true, maxLen: 160 },
+  { id: 'mi-chamocha', title: 'מי כמוך (עשי"ת)', start: ['מיכמוך אב הרחמן', 'מי כמוך אב הרחמן', 'מי כמוך אב הרחמים'], single: true, maxLen: 130 },
+  { id: 'uchtov', title: 'וכתוב לחיים (עשי"ת)', start: ['וכתוב לחיים טובים'], single: true, maxLen: 160 },
+  { id: 'bsefer', title: 'בספר חיים (עשי"ת)', start: ['בספר חיים ברכה ושלום', 'ובספר חיים ברכה ושלום'], single: true, maxLen: 220 },
+  // Avinu Malkeinu inline (Chabad has no heading for it) — fasts / Aseret Yemei Teshuva.
+  { id: 'avinu-malkeinu', title: 'אבינו מלכנו', start: ['בתענית ציבור ובעשית אומרים כאן אבינו מלכנו', 'אבינו מלכנו חטאנו לפניך', 'אבינו מלכנו אבינו אתה'], end: ['ואנחנו לא נדע', 'זכר רחמיך', 'תהלה לדוד'], span: 8 },
 ];
 
 const MAXFOLD = 10; // never fold more than this many blocks under one label
@@ -133,6 +141,12 @@ export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
     const g = matchInlineStart(b.t);
     if (g) {
       if (g.single || !g.end) {
+        // maxLen guard: a short insertion anchor must not fold a long daily blessing
+        if (g.maxLen != null && norm(b.t).length > g.maxLen) {
+          items.push({ kind: 'block', block: b });
+          i++;
+          continue;
+        }
         items.push({ kind: 'group', id: `${g.id}-${i}`, title: g.title, blocks: [b] });
         i++;
         continue;
