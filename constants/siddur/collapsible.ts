@@ -49,6 +49,8 @@ const INLINE_GROUPS: InlineGroup[] = [
   { id: 'barchu', title: 'ברכו', start: ['ברכו את יהוה המברך', 'ברכו את יהוה'], end: ['יוצר אור', 'המעריב ערבים', 'קש וברכותיה'] },
   { id: 'kaddish', title: 'קדיש', start: ['יתגדל ויתקדש שמה רבא'], single: true },
   { id: 'ata-chonantanu', title: 'אתה חוננתנו (מוצ"ש)', start: ['במוצאי שבת ויום טוב מוסיפים אתה חוננתנו', 'אתה חוננתנו יהוה אלהינו', 'אתה חוננתנו'], end: ['חננו מאתך', 'חכמה בינה ודעת מאתך'] },
+  // Long tachanun added only on Monday & Thursday, up to the kaddish that follows.
+  { id: 'tachanun-monthu', title: 'תחנון לשני וחמישי', start: ['בימי שני וחמישי מוסיפים', 'בימים שני וחמישי מוסיפים'], end: ['יתגדל ויתקדש שמה רבא'], span: 24 },
   { id: 'kedusha', title: 'קדושה (נקדישך)', start: ['נקדישך ונעריצך', 'נקדש את שמך', 'כתר יתנו לך', 'נקדישך ונקדישך'], end: ['לדור ודור', 'אתה קדוש ושמך קדוש', 'לדר ודר'] },
   { id: 'yaaleh-veyavo', title: 'יעלה ויבוא', start: ['בראש חדש ובחול המועד מוסיפים', 'אלהינו ואלהי אבותינו יעלה ויב', 'יעלה ויבא'], end: ['ואתה ברחמיך', 'ותחזינה עינינו'] },
   // Al HaNisim runs from "ועל הנסים" through בימי מתתיהו (Chanukah) and בימי מרדכי
@@ -77,8 +79,14 @@ interface HeadingGroup {
   maxFold: number;
 }
 const HEADING_GROUPS: HeadingGroup[] = [
-  // Birkat Kohanim — said by the shaliach tzibur daily; folds until "שים שלום".
+  // Said only with a minyan (chazan's repetition):
+  { match: 'מודים דרבנן', end: [], maxFold: 8 },
   { match: 'ברכת כהנים', end: ['שים שלום', 'שלום רב', 'שלום עליך'], maxFold: 20 },
+  // Said only on certain days:
+  { match: 'על הניסים', end: ['ועל כלם', 'ועל כולם', 'וכל החיים יודוך'], maxFold: 20 }, // חנוכה/פורים
+  { match: 'אבינו מלכנו', end: [], maxFold: 44 },                                        // תעניות / עשי"ת
+  { match: 'ספר תורה', end: [], maxFold: 28 },                                           // שני וחמישי בלבד
+  { match: 'במוצאי שבת', end: [], maxFold: 28 },                                         // מוצאי שבת בלבד
 ];
 
 function matchInlineStart(t: string): InlineGroup | null {
