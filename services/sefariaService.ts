@@ -2,7 +2,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HDate, Sedra } from '@hebcal/core';
 // Static import – avoids dynamic-import failures that caused the wrong chapter to appear
-import { getTanyaRefByDate, fetchTanyaEntry } from '@/services/tanyaScheduleService';
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
 import { getLocalTanya } from '@/services/tanyaOffline';
 import { getLocalRambam } from '@/services/rambamOffline';
@@ -601,76 +600,23 @@ const TANYA_BY_DATE: Record<MonthDay, { ref: string; titleHe: string }> = {
 };
 
 export function getTanyaPortionForDay(date: Date = new Date()): { ref: string; titleHe: string } {
-  const hdate = new HDate(date);
-  const month = hdate.getMonth();
-  const day = hdate.getDate();
-  const key = md(month, day);
-  return TANYA_BY_DATE[key] ?? { ref: 'Tanya, Part I; Likkutei Amarim.1', titleHe: 'ליקוטי אמרים – פרק א' };
+  // OFFLINE: single source of truth = the leap-aware local schedule.
+  const local = getLocalTanya(date);
+  if (local) return { ref: local.ref, titleHe: local.titleHe };
+  return { ref: 'Tanya', titleHe: 'תניא יומי' };
 }
 
 export async function fetchTanyaForDay(date: Date = new Date()): Promise<BookContent> {
-  // ── Primary path: fully OFFLINE, leap-year-aware local schedule + text.
-  //    Correct for both regular and leap Hebrew years (תקנת אדמו"ר הריי"צ),
-  //    which fixes the "Tanya not updated" bug and needs no network.
+  // Fully OFFLINE — the leap-year-aware local schedule + bundled text is the ONLY
+  // source. No Sefaria, no Hebcal, no drifting static table. This is what fixes the
+  // "Tanya stuck / not updated" mess that the online sources caused.
   const local = getLocalTanya(date);
-  if (local && local.sections.length > 0) return local;
-
-  // ── Fallback: Sefaria's daily calendar (only if the local lookup ever misses).
-  try {
-    const { tanya } = await fetchSefariaDailyRefs(date);
-    if (tanya) {
-      const content = await fetchFromSefaria(tanya);
-      if (content.sections.length > 0) return content;
-    }
-  } catch (calErr) {
-    console.warn('[fetchTanyaForDay] Sefaria calendar path failed:', calErr);
-  }
-
-  // ── Secondary path: the static 365-day Mora Shiur schedule (tanyaScheduleService)
-  // getTanyaRefByDate / fetchTanyaEntry are top-level static imports – no dynamic import needed.
-  try {
-    const scheduleEntry = getTanyaRefByDate(date);
-    const result = await fetchTanyaEntry(scheduleEntry);
-    if (result) {
-      // Build a rich title: Hebrew date label + portion reference
-      const titleHe = `${scheduleEntry.date}  ·  ${result.titleHe}`;
-      const portionNote = `${scheduleEntry.start} … ${scheduleEntry.end}`;
-
-      // Use fetched Hebrew text when available; otherwise show the portion note
-      const sections =
-        result.textHe.length > 0
-          ? result.textHe.map((t, i) => ({ verse: i + 1, text: t }))
-          : [{ verse: 1, text: portionNote }];
-
-      return { title: 'Tanya', titleHe, sections, ref: scheduleEntry.ref };
-    }
-  } catch (primaryErr) {
-    // log but do not swallow – fall through to legacy
-    console.warn('[fetchTanyaForDay] primary path failed:', primaryErr);
-  }
-
-  // ── Legacy fallback: TANYA_BY_DATE Hebrew-calendar lookup
-  // NOTE: this table may be off by one cycle; use only as last resort.
-  const portion = getTanyaPortionForDay(date);
-  const refsToTry = [
-    portion.ref,
-    portion.ref.replace('Tanya, Part I; ', 'Tanya, '),
-    portion.ref.replace('Tanya, Part II; ', 'Tanya, '),
-    portion.ref.replace('Tanya, Part III; ', 'Tanya, '),
-    portion.ref.replace('Tanya, Part IV; ', 'Tanya, '),
-    portion.ref.replace('Tanya, Part V; ', 'Tanya, '),
-  ];
-  for (const ref of refsToTry) {
-    try {
-      const content = await fetchFromSefaria(ref, portion.titleHe);
-      if (content.sections.length > 0) return content;
-    } catch {}
-  }
+  if (local) return local;
   return {
     title: 'Tanya',
-    titleHe: portion.titleHe,
-    sections: [{ verse: 1, text: 'לא ניתן לטעון את הטקסט. בדוק את חיבור האינטרנט.' }],
-    ref: portion.ref,
+    titleHe: 'תניא יומי',
+    sections: [{ verse: 1, text: 'לא נמצא תוכן לתאריך זה.' }],
+    ref: 'Tanya',
   };
 }
 

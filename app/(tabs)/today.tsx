@@ -21,7 +21,7 @@ import {
   ZmanimResult,
   ZmanDisplay,
 } from '@/services/zmanimService';
-import { getTanyaRefByDate } from '@/services/tanyaScheduleService';
+import { getLocalTanya } from '@/services/tanyaOffline';
 import { getDailyLearning } from '@/services/dailyLearningService';
 import { getTodayHebrew, hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
 import { getHayomYomText } from '@/constants/hayomyom';
@@ -313,22 +313,20 @@ export default function TodayScreen() {
     try { return getDailyLearning(new Date()); } catch { return []; }
   }, [hdate]);
 
-  const tanyaScheduleEntry = useMemo(() => {
-    try { return getTanyaRefByDate(new Date()); } catch { return null; }
+  const tanyaLocal = useMemo(() => {
+    try { return getLocalTanya(new Date()); } catch { return null; }
   }, [hdate]);
 
   const getLearningSubtitle = (id: string) => {
-    if (id === 'tanya' && tanyaScheduleEntry) {
-      return `${tanyaScheduleEntry.date}  ·  יום ${tanyaScheduleEntry.day_index} / 365`;
-    }
+    if (id === 'tanya' && tanyaLocal) return tanyaLocal.titleHe;
     return learningItems.find(i => i.id === id)?.subtitle;
   };
 
   const tanyaPortionPreview = useMemo(() => {
-    if (!tanyaScheduleEntry) return undefined;
-    const { start, end, ref } = tanyaScheduleEntry;
-    return `${ref}  ·  ${start} … ${end}`;
-  }, [tanyaScheduleEntry]);
+    const first = tanyaLocal?.sections?.[0]?.text;
+    if (!first) return undefined;
+    return first.length > 120 ? first.slice(0, 120) + '…' : first;
+  }, [tanyaLocal]);
 
   const hayomYomPreview = useMemo(() => {
     try {
