@@ -5,6 +5,7 @@ import { HDate, Sedra } from '@hebcal/core';
 import { getTanyaRefByDate, fetchTanyaEntry } from '@/services/tanyaScheduleService';
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
 import { getLocalTanya } from '@/services/tanyaOffline';
+import { getLocalRambam } from '@/services/rambamOffline';
 
 // ─── Types ────────────────────────────────────────────────
 export interface TextSection {
@@ -827,6 +828,12 @@ export async function fetchChumashWithRashiForDay(date: Date = new Date()): Prom
 // ─── Rambam (3 chapters/day) from Hebcal ─────────────────
 // Uses Hebcal's dr3=on to get the correct daily portion for current Hebrew year
 export async function fetchRambamForDay(date: Date = new Date()): Promise<BookContent[]> {
+  // ── Primary path: fully OFFLINE. The Daily Rambam (3 chapters) runs a continuous
+  //    339-day cycle (restarts Mishneh Torah), keyed by day-in-cycle. Renders with
+  //    book (ספר) / section (הלכות) / chapter headers + numbered halachot.
+  const local = getLocalRambam(date);
+  if (local.length > 0 && local.some((c) => c.sections.length > 0)) return local;
+
   // ── Authoritative path: Sefaria's daily calendar returns the exact Rambam refs.
   //    (Hebcal stopped returning the `link` field, which the legacy path below relied
   //    on — that's why Rambam showed no text.)
