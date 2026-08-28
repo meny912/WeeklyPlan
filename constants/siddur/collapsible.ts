@@ -32,8 +32,11 @@ function norm(s: string): string {
     .trim();
 }
 
+// Space-insensitive match: the Chabad Sefaria text often joins words with no
+// space ("ועלכלם", "וכלהחיים", "מיכמוך"), so compare with all spaces removed.
 function includesAny(hayNorm: string, needles: string[]): boolean {
-  return needles.some((n) => hayNorm.includes(n));
+  const h = hayNorm.replace(/ /g, '');
+  return needles.some((n) => h.includes(n.replace(/ /g, '')));
 }
 
 interface InlineGroup {
@@ -112,7 +115,7 @@ export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
 
     if (b.k === 'h') {
       const hn = norm(b.t);
-      const hg = HEADING_GROUPS.find((g) => hn.includes(norm(g.match)));
+      const hg = HEADING_GROUPS.find((g) => includesAny(hn, [g.match]));
       if (hg) {
         let j = i + 1;
         let endHit = -1;
