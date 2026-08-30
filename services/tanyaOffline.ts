@@ -70,7 +70,15 @@ export function getLocalTanya(date: Date = new Date()): TanyaDaily | null {
   try {
     const hd = new HDate(date);
     const key = `${hd.getMonth()}-${hd.getDate()}`;
-    const leap = hd.isLeapYear();
+    // Robust leap detection: prefer the static API, then the instance method.
+    let leap = false;
+    try {
+      leap = typeof (HDate as any).isLeapYear === 'function'
+        ? (HDate as any).isLeapYear(hd.getFullYear())
+        : (hd as any).isLeapYear();
+    } catch {
+      try { leap = (hd as any).isLeapYear(); } catch { leap = false; }
+    }
     const map = leap ? TANYA_YOMI_LEAP : TANYA_YOMI_REGULAR;
     const ref = map[key];
     if (!ref) return null;
