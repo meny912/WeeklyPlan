@@ -21,7 +21,7 @@ import {
   ZmanimResult,
   ZmanDisplay,
 } from '@/services/zmanimService';
-import { getLocalTanya } from '@/services/tanyaOffline';
+import { getLocalTanya } from '@/services/dailyTanya';
 import { getDailyLearning } from '@/services/dailyLearningService';
 import { getTodayHebrew, hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
 import { getHayomYomText } from '@/constants/hayomyom';

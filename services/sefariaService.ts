@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HDate, Sedra } from '@hebcal/core';
 // Static import – avoids dynamic-import failures that caused the wrong chapter to appear
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
-import { getLocalTanya } from '@/services/tanyaOffline';
+import { getLocalTanya } from '@/services/dailyTanya';
 import { getLocalRambam } from '@/services/rambamOffline';
 
 // ─── Types ────────────────────────────────────────────────
