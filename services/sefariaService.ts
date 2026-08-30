@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HDate, Sedra } from '@hebcal/core';
 // Static import – avoids dynamic-import failures that caused the wrong chapter to appear
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
-import { getLocalTanya } from '@/services/dailyTanya';
+import { getLocalTanya, resolveDailyTanya } from '@/services/dailyTanya';
 import { getLocalRambam } from '@/services/rambamOffline';
 
 // ─── Types ────────────────────────────────────────────────
@@ -607,17 +607,10 @@ export function getTanyaPortionForDay(date: Date = new Date()): { ref: string; t
 }
 
 export async function fetchTanyaForDay(date: Date = new Date()): Promise<BookContent> {
-  // Fully OFFLINE — the leap-year-aware local schedule + bundled text is the ONLY
-  // source. No Sefaria, no Hebcal, no drifting static table. This is what fixes the
-  // "Tanya stuck / not updated" mess that the online sources caused.
-  const local = getLocalTanya(date);
-  if (local) return local;
-  return {
-    title: 'Tanya',
-    titleHe: 'תניא יומי',
-    sections: [{ verse: 1, text: 'לא נמצא תוכן לתאריך זה.' }],
-    ref: 'Tanya',
-  };
+  // Bundled local schedule + text first (offline); if the bundle didn't load, the
+  // exact portion is fetched once from Sefaria and cached on-device. Correct + no
+  // drifting static table (which is what caused the "stuck on the wrong chapter" bug).
+  return resolveDailyTanya(date);
 }
 
 // ─── Chumash ─────────────────────────────────────────────
