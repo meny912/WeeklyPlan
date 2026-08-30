@@ -140,31 +140,52 @@ async function fetchRefTextOnline(ref: string): Promise<string[]> {
   return flat.map(strip).filter((t) => t.length > 0);
 }
 
+// The authoritative daily Tanya Yomi ref straight from Sefaria's calendar — always
+// current, and INDEPENDENT of the bundled schedule (which the build sometimes stubs).
+async function fetchTanyaRefFromCalendar(date: Date): Promise<string | null> {
+  const url = `https://www.sefaria.org/api/calendars?year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`;
+  const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  for (const it of data.calendar_items ?? []) {
+    const en = it?.title?.en ?? '';
+    if (en === 'Tanya Yomi' || en === 'Tanya') return it?.ref ?? null;
+  }
+  return null;
+}
+
 /**
- * Resolve today's Tanya, guaranteed. Bundled first (offline); if that didn't load,
- * fetch the exact portion once from Sefaria and cache it on-device (offline after).
+ * Resolve today's Tanya, guaranteed. Bundled first (offline); otherwise fetch the
+ * exact portion ONCE from Sefaria — both the ref (from the calendar) and the text —
+ * and cache it on-device, so it is always correct and works offline after first sync.
+ * The ref comes from the network so it works even when the bundled schedule is empty.
  */
 export async function resolveDailyTanya(date: Date = new Date()): Promise<TanyaDaily> {
   const bundled = getLocalTanya(date);
   if (bundled) return bundled;
 
-  const portion = getTanyaRefForDate(date);
   const dateStr = ymd(date);
-  const cacheKey = `tanya_daily_v1_${dateStr}`;
+  const cacheKey = `tanya_daily_v2_${dateStr}`;
   try {
     const cached = await AsyncStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached) as TanyaDaily;
   } catch {}
 
-  if (portion) {
+  // Get the ref: prefer the bundled schedule; if it is empty, ask Sefaria's calendar.
+  let ref = getTanyaRefForDate(date)?.ref ?? null;
+  if (!ref) {
+    try { ref = await fetchTanyaRefFromCalendar(date); } catch {}
+  }
+
+  if (ref) {
     try {
-      const lines = await fetchRefTextOnline(portion.ref);
+      const lines = await fetchRefTextOnline(ref);
       if (lines.length > 0) {
         const result: TanyaDaily = {
           title: 'Tanya',
-          titleHe: portion.titleHe,
+          titleHe: refToTitle(ref),
           sections: lines.map((t, i) => ({ verse: i + 1, text: t })),
-          ref: portion.ref,
+          ref,
         };
         try { await AsyncStorage.setItem(cacheKey, JSON.stringify(result)); } catch {}
         return result;
@@ -174,8 +195,8 @@ export async function resolveDailyTanya(date: Date = new Date()): Promise<TanyaD
 
   return {
     title: 'Tanya',
-    titleHe: portion?.titleHe ?? 'תניא יומי',
-    sections: [{ verse: 1, text: 'לא נמצא תוכן לתאריך זה.' }],
-    ref: portion?.ref ?? 'Tanya',
+    titleHe: ref ? refToTitle(ref) : 'תניא יומי',
+    sections: [{ verse: 1, text: 'לא ניתן לטעון את השיעור. בדוק חיבור אינטרנט פעם אחת והוא יישמר.' }],
+    ref: ref ?? 'Tanya',
   };
 }
