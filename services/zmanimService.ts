@@ -1,6 +1,7 @@
 // Powered by OnSpace.AI
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GeoLocation, Zmanim } from '@hebcal/core';
 
 export interface ZmanimTimes {
   alotHaShachar?: string;
@@ -64,6 +65,51 @@ function addMinutes(iso: string, min: number): string {
   }
 }
 
+// ── Local zmanim (OFFLINE) via @hebcal/core ─────────────────
+// Computes every halachic time from lat/long/date on-device — no network, so it
+// can never fail with a false "no network". Returns null only if the library API
+// is unexpectedly unavailable, in which case we fall back to the Hebcal web API.
+function computeLocalTimes(lat: number, lng: number, tzid: string, name: string, date: Date): ZmanimTimes | null {
+  try {
+    const gloc = new GeoLocation(name, lat, lng, 0, tzid);
+    const z = new Zmanim(gloc, date, false);
+    const iso = (fn: () => Date): string | undefined => {
+      try {
+        const d = fn();
+        return d instanceof Date && !isNaN(d.getTime()) ? d.toISOString() : undefined;
+      } catch {
+        return undefined;
+      }
+    };
+    const sunsetD = (() => { try { return z.sunset(); } catch { return null; } })();
+    const tzeit42 = sunsetD ? new Date(sunsetD.getTime() + 42 * 60000).toISOString() : undefined;
+    const zz = z as any;
+    const times: ZmanimTimes = {
+      alotHaShachar: iso(() => (typeof zz.alotHaShachar === 'function' ? zz.alotHaShachar() : zz.dawn())),
+      misheyakir: iso(() => z.misheyakir()),
+      sunrise: iso(() => z.sunrise()),
+      sofZmanShmaMGA: iso(() => z.sofZmanShmaMGA()),
+      sofZmanShma: iso(() => z.sofZmanShma()),
+      sofZmanTfillaMGA: iso(() => z.sofZmanTfillaMGA()),
+      sofZmanTfilla: iso(() => z.sofZmanTfilla()),
+      chatzot: iso(() => z.chatzot()),
+      minchaGedola: iso(() => z.minchaGedola()),
+      minchaKetana: iso(() => z.minchaKetana()),
+      plagHaMincha: iso(() => z.plagHaMincha()),
+      sunset: iso(() => z.sunset()),
+      tzeit42min: tzeit42,
+      tzeit7083deg: iso(() => z.tzeit(7.083)),
+    };
+    // Valid only if the core solar AND a derived halachic time resolved — otherwise
+    // the library API differs from what we expect, so fall back to the web API
+    // rather than show a half-empty list.
+    if (!times.sunrise || !times.sunset || !times.sofZmanShma || !times.chatzot) return null;
+    return times;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchZmanim(): Promise<ZmanimResult> {
   const today = new Date();
   const dateStr = getDateStr(today);
@@ -77,8 +123,7 @@ export async function fetchZmanim(): Promise<ZmanimResult> {
     }
   } catch {}
 
-  // Device timezone — REQUIRED by Hebcal's zmanim API. Without tzid the API returns
-  // empty times ("Timezone required"), which the UI wrongly surfaced as "no network".
+  // Device timezone (used both for local computation and, as a fallback, the API).
   let tzid = 'Asia/Jerusalem';
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -112,33 +157,47 @@ export async function fetchZmanim(): Promise<ZmanimResult> {
     }
   } catch {}
 
-  const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&tzid=${encodeURIComponent(tzid)}&date=${dateStr}&sec=0`;
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error('Failed to fetch zmanim');
-  const data = await resp.json();
-  const rawTimes = data.times ?? {};
-
-  // For Friday: also fetch next day (Shabbat) for tzeit
+  // ── PRIMARY: compute everything locally (offline). ──
+  let rawTimes = computeLocalTimes(lat, lng, tzid, locationName, today);
   let shabbatExit: string | undefined;
-  if (isFriday(today)) {
-    const satDate = new Date(today);
-    satDate.setDate(satDate.getDate() + 1);
-    const satStr = getDateStr(satDate);
+  if (rawTimes) {
+    if (isFriday(today)) {
+      const satDate = new Date(today);
+      satDate.setDate(satDate.getDate() + 1);
+      const satTimes = computeLocalTimes(lat, lng, tzid, locationName, satDate);
+      shabbatExit = satTimes?.tzeit42min;
+    }
+  } else {
+    // ── FALLBACK: Hebcal web API (only if the local library is unavailable). ──
     try {
-      const satResp = await fetch(`https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&tzid=${encodeURIComponent(tzid)}&date=${satStr}&sec=0`);
-      if (satResp.ok) {
-        const satData = await satResp.json();
-        shabbatExit = satData.times?.tzeit42min;
+      const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&tzid=${encodeURIComponent(tzid)}&date=${dateStr}&sec=0`;
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const data = await resp.json();
+        rawTimes = data.times ?? {};
       }
     } catch {}
+    if (isFriday(today) && rawTimes) {
+      const satDate = new Date(today);
+      satDate.setDate(satDate.getDate() + 1);
+      const satStr = getDateStr(satDate);
+      try {
+        const satResp = await fetch(`https://www.hebcal.com/zmanim?cfg=json&latitude=${lat}&longitude=${lng}&tzid=${encodeURIComponent(tzid)}&date=${satStr}&sec=0`);
+        if (satResp.ok) {
+          const satData = await satResp.json();
+          shabbatExit = satData.times?.tzeit42min;
+        }
+      } catch {}
+    }
   }
 
+  const t = rawTimes ?? {};
   const result: ZmanimResult = {
-    times: rawTimes,
+    times: t,
     location: locationName,
     date: dateStr,
-    shabbatEntry: isFriday(today) ? addMinutes(rawTimes.sunset ?? '', 18) : undefined,
-    shabbatExit: isSaturday(today) ? rawTimes.tzeit42min : shabbatExit,
+    shabbatEntry: isFriday(today) ? addMinutes(t.sunset ?? '', 18) : undefined,
+    shabbatExit: isSaturday(today) ? t.tzeit42min : shabbatExit,
   };
 
   try {
