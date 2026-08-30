@@ -1,46 +1,53 @@
 // Powered by OnSpace.AI
-// Extra Tehillim schedules: the Chabad "3 chapters a day in Elul" custom (date-aware),
-// and the user's own personal chapters (stored on device).
+// Tehillim extras: Elul daily portion + personal chapter list (persisted).
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HDate, months } from '@hebcal/core';
 
+const PERSONAL_KEY = 'tehillim_personal_chapters_v1';
+
 /**
- * Chabad custom: from Rosh Chodesh Elul, say 3 chapters of Tehillim each day in order.
- * Day N of Elul → chapters (3N-2, 3N-1, 3N). (Elul 1 → 1-3 … Elul 29 → 85-87.)
- * Auto-updates every day via the device's Hebrew date. Returns null outside Elul.
+ * Returns the Tehillim chapters for today's Elul Chabad schedule
+ * (3 chapters/day for the first 29 days, 36 chapters on the 30th).
+ * Returns null if today is not in Elul.
  */
 export function getElulTehillim(date: Date = new Date()): number[] | null {
   try {
-    const h = new HDate(date);
-    if (h.getMonth() !== months.ELUL) return null;
-    const d = h.getDate();
-    const base = (d - 1) * 3;
-    return [base + 1, base + 2, base + 3].filter((n) => n >= 1 && n <= 150);
+    const hdate = new HDate(date);
+    if (hdate.getMonth() !== months.ELUL) return null;
+    const day = hdate.getDate(); // 1..29/30
+    // Chabad custom: 3 psalms/day for days 1-29, last day gets the remainder.
+    // 29 days × 3 = 87 chapters (1-87). Day 30 = chapters 88-150 (Rosh Hashana eve).
+    if (day <= 29) {
+      const start = (day - 1) * 3 + 1;
+      return [start, start + 1, start + 2];
+    }
+    // Day 30 (or last day when month is 29 days → handled below): 88-150
+    const start = 88;
+    const end = 150;
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   } catch {
     return null;
   }
 }
 
-const PERSONAL_KEY = 'tehillim_personal_v1';
-
-/** Chapters the user chose to add to their daily Tehillim. */
+/** Load the user's personal list of Tehillim chapter numbers from storage. */
 export async function getPersonalTehillim(): Promise<number[]> {
   try {
     const raw = await AsyncStorage.getItem(PERSONAL_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? (arr as number[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((n: unknown) => typeof n === 'number' && n >= 1 && n <= 150);
   } catch {
     return [];
   }
 }
 
-/** Replace the personal-chapter list (deduped, in range, sorted). */
+/** Save the user's personal list. Returns the saved (validated) list. */
 export async function savePersonalTehillim(chapters: number[]): Promise<number[]> {
-  const clean = [...new Set(chapters.filter((n) => Number.isInteger(n) && n >= 1 && n <= 150))].sort(
-    (a, b) => a - b,
-  );
+  const valid = [...new Set(chapters.filter((n) => n >= 1 && n <= 150))].sort((a, b) => a - b);
   try {
-    await AsyncStorage.setItem(PERSONAL_KEY, JSON.stringify(clean));
+    await AsyncStorage.setItem(PERSONAL_KEY, JSON.stringify(valid));
   } catch {}
-  return clean;
+  return valid;
 }
