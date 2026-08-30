@@ -154,6 +154,35 @@ async function fetchTanyaRefFromCalendar(date: Date): Promise<string | null> {
   return null;
 }
 
+async function tanyaRefFor(date: Date): Promise<string | null> {
+  return getTanyaRefForDate(date)?.ref ?? (await fetchTanyaRefFromCalendar(date).catch(() => null));
+}
+
+function refParts(ref: string): { book: string; siman: number; seg: number } | null {
+  const m = ref.match(/^(.*?)\s+(\d+):(\d+)$/);
+  return m ? { book: m[1], siman: +m[2], seg: +m[3] } : null;
+}
+
+// The calendar gives only the STARTING segment of each day; Sefaria splits a siman
+// into many segments. The real daily portion runs from today's segment up to (but
+// not including) tomorrow's segment — so fetch that range.
+async function fetchDailyPortionText(todayRef: string, tomorrowRef: string | null): Promise<string[]> {
+  const a = refParts(todayRef);
+  const b = tomorrowRef ? refParts(tomorrowRef) : null;
+  if (a && b && a.book === b.book && (b.siman > a.siman || (b.siman === a.siman && b.seg > a.seg))) {
+    const rangeRef = `${a.book} ${a.siman}:${a.seg}-${b.siman}:${b.seg}`;
+    const segs = await fetchRefTextOnline(rangeRef);
+    if (segs.length > 1) return segs.slice(0, -1); // drop tomorrow's first segment
+    if (segs.length === 1) return segs;
+  }
+  if (a) {
+    // no usable tomorrow ref (or different book): today's segment → end of its siman
+    const whole = await fetchRefTextOnline(`${a.book} ${a.siman}`);
+    if (whole.length > a.seg - 1) return whole.slice(a.seg - 1);
+  }
+  return fetchRefTextOnline(todayRef);
+}
+
 /**
  * Resolve today's Tanya, guaranteed. Bundled first (offline); otherwise fetch the
  * exact portion ONCE from Sefaria — both the ref (from the calendar) and the text —
@@ -171,15 +200,15 @@ export async function resolveDailyTanya(date: Date = new Date()): Promise<TanyaD
     if (cached) return JSON.parse(cached) as TanyaDaily;
   } catch {}
 
-  // Get the ref: prefer the bundled schedule; if it is empty, ask Sefaria's calendar.
-  let ref = getTanyaRefForDate(date)?.ref ?? null;
-  if (!ref) {
-    try { ref = await fetchTanyaRefFromCalendar(date); } catch {}
-  }
+  // Get today's ref (bundled schedule, else Sefaria calendar).
+  const ref = await tanyaRefFor(date);
 
   if (ref) {
     try {
-      const lines = await fetchRefTextOnline(ref);
+      const tomorrow = new Date(date);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowRef = await tanyaRefFor(tomorrow);
+      const lines = await fetchDailyPortionText(ref, tomorrowRef);
       if (lines.length > 0) {
         const result: TanyaDaily = {
           title: 'Tanya',
