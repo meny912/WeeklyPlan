@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "onspace-app",
+    "name": "WeeklyPlan",
     "slug": "onspace-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,9 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mendylubavitch.weeklyplan"
     },
     "android": {
+      "package": "com.mendylubavitch.weeklyplan",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
@@ -38,6 +41,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a8c315fc-7d6c-40eb-97c0-fdba64a5afba"
+      }
+    },
+    "owner": "meny1234"
   }
 }
