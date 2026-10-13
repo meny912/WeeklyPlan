@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.mendylubavitch.weeklyplan",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
