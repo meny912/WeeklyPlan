@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.mendylubavitch.weeklyplan",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
@@ -43,7 +43,6 @@
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.HIGH_SAMPLING_RATE_SENSORS",
-        "android.permission.DETECT_SCREEN_CAPTURE",
         "android.permission.READ_PHONE_STATE"
       ]
     },
