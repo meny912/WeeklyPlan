@@ -10,11 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mendylubavitch.weeklyplan"
+      "bundleIdentifier": "com.mmgcompany.weeklyplan"
     },
     "android": {
-      "package": "com.mendylubavitch.weeklyplan",
-      "versionCode": 5,
+      "package": "com.mmgcompany.weeklyplan",
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
