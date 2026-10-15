@@ -15,6 +15,10 @@
   h1 { font-size:1.7em; margin:16px 0 4px; }
   .sub { color:var(--muted); margin:0 0 28px; }
   .btn { display:block; background:var(--accent); color:#111; font-weight:700; font-size:1.15em; text-decoration:none; padding:16px; border-radius:14px; }
+  .badge { display:inline-flex; align-items:center; gap:12px; background:#000; color:#fff; text-decoration:none; padding:10px 22px 10px 18px; border-radius:12px; border:1.5px solid #a6a6a6; }
+  .badge svg { width:38px; height:38px; flex:none; }
+  .badge span { display:flex; flex-direction:column; text-align:left; font-size:1.55em; font-weight:600; line-height:1.1; letter-spacing:-.01em; }
+  .badge small { font-size:.45em; font-weight:400; letter-spacing:0; }
   .note { color:var(--muted); font-size:.9em; margin-top:10px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-top:28px; text-align:right; }
   .card h2 { font-size:1.05em; margin:0 0 8px; }
@@ -29,7 +33,10 @@
   <h1>סדר היום שלך בדרך היהדות</h1>
   <p class="sub">לימוד יומי, לוח שנה עברי וזמני היום</p>
 
-  <a class="btn" href="https://github.com/meny912/WeeklyPlan/releases/latest/download/WeeklyPlan.apk">הורדה לאנדרואיד</a>
+  <a class="badge" href="https://github.com/meny912/WeeklyPlan/releases/latest/download/WeeklyPlan.apk" dir="ltr">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#3DDC84" d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.5 11.5 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
+    <span><small>הורדה עבור</small>Android</span>
+  </a>
   <p class="note">חינם · ללא הרשמה · ללא פרסומות</p>
 
   <div class="card">
