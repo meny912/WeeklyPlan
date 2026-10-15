@@ -5,6 +5,6 @@ const config = getDefaultConfig(__dirname);
 
 // Bump this string whenever Metro gets a "duplicate package" error to force
 // a full resolver cache flush without touching package.json.
-config.cacheVersion = '2';
+config.cacheVersion = '3';
 
 module.exports = config;
