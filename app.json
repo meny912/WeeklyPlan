@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mmgcompany.weeklyplan"
+      "bundleIdentifier": "app.onspace.weeklyplan"
     },
     "android": {
       "package": "com.mmgcompany.weeklyplan",
