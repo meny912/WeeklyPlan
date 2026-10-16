@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import {
   fetchZmanim,
   buildZmanimDisplay,
@@ -39,8 +39,8 @@ function useLearningCategories() {
       subtitle: t('cat_hayomyom_sub'),
       description: t('cat_hayomyom_desc'),
       icon: 'ה',
-      color: '#E8A838',
-      bgColor: '#E8A83815',
+      color: '#C9A55C',
+      bgColor: '#C9A55C15',
     },
     {
       id: 'tehillim',
@@ -48,8 +48,8 @@ function useLearningCategories() {
       subtitle: t('cat_tehillim_sub'),
       description: t('cat_tehillim_desc'),
       icon: 'תה',
-      color: '#9B7FCC',
-      bgColor: '#9B7FCC15',
+      color: '#9C8CC4',
+      bgColor: '#9C8CC415',
     },
     {
       id: 'chumash',
@@ -57,8 +57,8 @@ function useLearningCategories() {
       subtitle: t('cat_chumash_sub'),
       description: t('cat_chumash_desc'),
       icon: 'ח',
-      color: '#E67E45',
-      bgColor: '#E67E4515',
+      color: '#C98A6B',
+      bgColor: '#C98A6B15',
     },
     {
       id: 'shnayim',
@@ -66,8 +66,8 @@ function useLearningCategories() {
       subtitle: t('cat_shnayim_sub'),
       description: t('cat_shnayim_desc'),
       icon: 'ש',
-      color: '#C98A3B',
-      bgColor: '#C98A3B15',
+      color: '#B8956A',
+      bgColor: '#B8956A15',
     },
     {
       id: 'tanya',
@@ -75,8 +75,8 @@ function useLearningCategories() {
       subtitle: t('cat_tanya_sub'),
       description: t('cat_tanya_desc'),
       icon: 'תנ',
-      color: '#4CAF8A',
-      bgColor: '#4CAF8A15',
+      color: '#7FAE95',
+      bgColor: '#7FAE9515',
     },
     {
       id: 'rambam',
@@ -84,8 +84,8 @@ function useLearningCategories() {
       subtitle: t('cat_rambam_sub'),
       description: t('cat_rambam_desc'),
       icon: 'ר',
-      color: '#5BAFD6',
-      bgColor: '#5BAFD615',
+      color: '#7FA3C2',
+      bgColor: '#7FA3C215',
     },
   ], [t]);
 }
@@ -118,15 +118,15 @@ const zmanStyles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingVertical: 11,
     paddingHorizontal: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: Spacing.sm,
   },
-  rowHighlight: { backgroundColor: 'rgba(245,166,35,0.04)' },
-  rowShabbat: { backgroundColor: 'rgba(91,175,214,0.08)' },
+  rowHighlight: { backgroundColor: 'rgba(201,165,92,0.04)' },
+  rowShabbat: { backgroundColor: 'rgba(127,163,194,0.08)' },
   rowPast: { opacity: 0.42 },
   time: {
     fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.primary,
     width: 54, textAlign: 'left', fontVariant: ['tabular-nums'],
   },
   timePast: { color: Colors.textMuted },
-  timeShabbat: { color: '#5BAFD6' },
+  timeShabbat: { color: '#7FA3C2' },
   body: { flex: 1 },
   label: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right' },
   labelPast: { color: Colors.textSecondary },
@@ -184,9 +184,9 @@ const catStyles = StyleSheet.create({
     paddingRight: Spacing.sm, paddingVertical: Spacing.md,
   },
   iconWrap: { width: 52, height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  icon: { fontSize: 22, fontWeight: FontWeight.bold },
+  icon: { fontSize: 24, fontFamily: Fonts.serif },
   body: { flex: 1, gap: 2 },
-  title: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text, textAlign: 'right' },
+  title: { fontSize: FontSize.lg, fontFamily: Fonts.serif, color: Colors.text, textAlign: 'right' },
   subtitle: { fontSize: FontSize.sm, color: Colors.primary, fontWeight: FontWeight.semibold, textAlign: 'right' },
   desc: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: 'right' },
   arrow: { width: 32, height: 32, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -222,7 +222,7 @@ const prayerStyles = StyleSheet.create({
   title: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right' },
   sub: { fontSize: FontSize.xs, color: Colors.textSecondary, textAlign: 'right', marginTop: 1 },
   nowPill: {
-    fontSize: FontSize.xs, color: Colors.primary, backgroundColor: 'rgba(245,166,35,0.12)',
+    fontSize: FontSize.xs, color: Colors.primary, backgroundColor: 'rgba(201,165,92,0.12)',
     paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.full, overflow: 'hidden',
   },
 });
@@ -537,20 +537,20 @@ const styles = StyleSheet.create({
   },
   dateLeft: { gap: 3 },
   dayName: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'right' },
-  hebrewDate: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, color: Colors.primary, textAlign: 'right' },
+  hebrewDate: { fontSize: FontSize.xxl, fontFamily: Fonts.serif, color: Colors.primary, textAlign: 'right' },
   gregDate: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: 'right' },
   clockBox: { alignItems: 'flex-end', gap: 6 },
   clockText: { fontSize: 30, fontWeight: FontWeight.bold, color: Colors.text, fontVariant: ['tabular-nums'] },
   nextZmanPill: {
     fontSize: FontSize.xs, color: Colors.primary,
-    backgroundColor: 'rgba(245,166,35,0.12)', paddingHorizontal: 8, paddingVertical: 3,
+    backgroundColor: 'rgba(201,165,92,0.12)', paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: Radius.full, overflow: 'hidden',
   },
 
   nextZmanBanner: {
-    backgroundColor: 'rgba(245,166,35,0.08)', borderRadius: Radius.lg, padding: Spacing.md,
+    backgroundColor: 'rgba(201,165,92,0.08)', borderRadius: Radius.lg, padding: Spacing.md,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(245,166,35,0.25)',
+    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(201,165,92,0.25)',
   },
   nextZmanLabel: { fontSize: FontSize.xs, color: Colors.textSecondary },
   nextZmanName: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text },
@@ -581,8 +581,8 @@ const styles = StyleSheet.create({
   zmanimFooterText: { fontSize: FontSize.xs, color: Colors.textMuted },
 
   inspirationCard: {
-    backgroundColor: '#E8A83810', borderRadius: Radius.lg, padding: Spacing.md,
-    marginBottom: Spacing.md, borderWidth: 1, borderColor: '#E8A83840',
+    backgroundColor: '#C9A55C10', borderRadius: Radius.lg, padding: Spacing.md,
+    marginBottom: Spacing.md, borderWidth: 1, borderColor: '#C9A55C40',
   },
   inspirationHeader: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,

@@ -178,6 +178,58 @@ function splitRefs(refs: string): string[] {
   }).filter(Boolean);
 }
 
+// ─── Chumash with Rashi after every verse ─────────────────
+/** Rashi comments keyed by "chapter:verse"; each comment split into its
+ *  dibbur hamatchil (the bold lead words) and the explanation. */
+async function fetchRashi(ref: string): Promise<Map<string, { lead: string; text: string }[]>> {
+  const { from } = parseRef(ref);
+  const resp = await fetch(`https://www.sefaria.org/api/v3/texts/${encodeURIComponent(`Rashi on ${ref}`)}`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!resp.ok) throw new Error(`Sefaria ${resp.status}: Rashi on ${ref}`);
+  const raw = (await resp.json()).versions?.[0]?.text;
+  const out = new Map<string, { lead: string; text: string }[]>();
+  if (!Array.isArray(raw)) return out;
+  // Single chapter → [verse][comment]; several chapters → [chapter][verse][comment]
+  const depth3 = raw.some((v: any) => Array.isArray(v) && v.some((c: any) => Array.isArray(c)));
+  const chapters: string[][][] = depth3 ? raw : [raw];
+  chapters.forEach((verses, ci) => {
+    verses.forEach((comments, vi) => {
+      const list = (Array.isArray(comments) ? comments : [comments]).filter(Boolean).map((c: string) => {
+        const m = c.match(/^\s*<b>([\s\S]*?)<\/b>\s*([\s\S]*)$/);
+        return m ? { lead: clean(m[1]), text: clean(m[2]) } : { lead: '', text: clean(c) };
+      });
+      if (list.length) out.set(`${from.ch + ci}:${(ci === 0 ? from.v : 1) + vi}`, list);
+    });
+  });
+  return out;
+}
+
+/** One aliyah of Chumash with each verse followed by its Rashi. */
+export async function fetchChumashWithRashi(ref: string, titleHe: string): Promise<BookContent> {
+  const key = CACHE_PREFIX + 'rashi_' + ref;
+  try {
+    const cached = await AsyncStorage.getItem(key);
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  const [verses, rashi] = await Promise.all([
+    fetchVerses(ref, MASORAH),
+    fetchRashi(ref).catch(() => new Map<string, { lead: string; text: string }[]>()),
+  ]);
+  const rows: TextSection[] = [];
+  for (const v of verses) {
+    rows.push({ verse: v.v, text: v.text, kind: 'mikra' });
+    for (const c of rashi.get(`${v.ch}:${v.v}`) ?? []) {
+      rows.push({ verse: v.v, text: c.text, lead: c.lead, kind: 'rashi' });
+    }
+  }
+  const result: BookContent = { title: ref, titleHe, sections: rows, ref: heRef(ref) };
+  if (rows.length) {
+    try { await AsyncStorage.setItem(key, JSON.stringify(result)); } catch {}
+  }
+  return result;
+}
+
 // ─── Public API ───────────────────────────────────────────
 export interface ShnayimMikra {
   parshaHe: string;

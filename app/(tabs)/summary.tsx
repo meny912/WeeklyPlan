@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useWeeklyPlan } from '@/hooks/useWeeklyPlan';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import { ProgressRing } from '@/components';
 import { useTranslation, useDayLabels } from '@/contexts/SettingsContext';
 import {
@@ -33,13 +33,13 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 function percentColor(p: number) {
   if (p >= 80) return Colors.success;
   if (p >= 50) return Colors.primary;
-  return '#FF6B6B';
+  return '#D07A7A';
 }
 
 function percentBg(p: number) {
   if (p >= 80) return Colors.successDim;
-  if (p >= 50) return '#4F46E515';
-  return '#FF6B6B15';
+  if (p >= 50) return '#7FA3C215';
+  return '#D07A7A15';
 }
 
 // ─── Tiny progress bar ──────────────────────────────────────
@@ -61,7 +61,7 @@ const miniBar = StyleSheet.create({
 
 function TaskList({ items, done }: { items: string[]; done: boolean }) {
   if (!items.length) return null;
-  const color = done ? Colors.success : '#FF6B6B';
+  const color = done ? Colors.success : '#D07A7A';
   const icon  = done ? 'check-circle' : 'cancel';
   return (
     <View style={tl.wrap}>
@@ -122,7 +122,7 @@ function DayRow({ day, isToday }: { day: DayBreakdown; isToday: boolean }) {
           )}
           {day.missedTaskTitles.length > 0 && (
             <>
-              <Text style={[dr.sectionLabel, { color: '#FF6B6B', marginTop: 8 }]}>
+              <Text style={[dr.sectionLabel, { color: '#D07A7A', marginTop: 8 }]}>
                 {t('day_missed_label')}
               </Text>
               <TaskList items={day.missedTaskTitles} done={false} />
@@ -209,7 +209,7 @@ function ThisWeekTab() {
         <View style={tw.statRow}>
           <StatBadge label={t('stat_done')}  value={String(stats.done)}               color={Colors.success} />
           <View style={tw.div} />
-          <StatBadge label={t('stat_left')}  value={String(stats.total - stats.done)} color="#FF6B6B" />
+          <StatBadge label={t('stat_left')}  value={String(stats.total - stats.done)} color="#D07A7A" />
           <View style={tw.div} />
           <StatBadge label={t('stat_total')} value={String(stats.total)}              color={Colors.text} />
         </View>
@@ -237,8 +237,8 @@ function ThisWeekTab() {
       {allMissed.length > 0 && (
         <View style={tw.card}>
           <View style={tw.cardHeader}>
-            <MaterialIcons name="cancel" size={18} color="#FF6B6B" />
-            <Text style={[tw.cardTitle, { color: '#FF6B6B' }]}>
+            <MaterialIcons name="cancel" size={18} color="#D07A7A" />
+            <Text style={[tw.cardTitle, { color: '#D07A7A' }]}>
               {t('section_pending')} ({allMissed.length})
             </Text>
           </View>
@@ -347,9 +347,9 @@ function HistoryCard({ entry }: { entry: WeekHistoryEntry }) {
               <Text style={[hc.chipText, { color: Colors.success }]}>{entry.doneTasks} {t('stat_done')}</Text>
             </View>
             {entry.missedTasks.length > 0 && (
-              <View style={[hc.chip, { backgroundColor: '#FF6B6B15' }]}>
-                <MaterialIcons name="cancel" size={12} color="#FF6B6B" />
-                <Text style={[hc.chipText, { color: '#FF6B6B' }]}>{entry.missedTasks.length} {t('section_pending')}</Text>
+              <View style={[hc.chip, { backgroundColor: '#D07A7A15' }]}>
+                <MaterialIcons name="cancel" size={12} color="#D07A7A" />
+                <Text style={[hc.chipText, { color: '#D07A7A' }]}>{entry.missedTasks.length} {t('section_pending')}</Text>
               </View>
             )}
           </View>
@@ -383,7 +383,7 @@ function HistoryCard({ entry }: { entry: WeekHistoryEntry }) {
                 const all = entry.dailyBreakdown.flatMap(d => d.missedTaskTitles);
                 return all.length > 0 ? (
                   <>
-                    <Text style={[hc.sectionTitle, { color: '#FF6B6B', marginTop: 10 }]}>{t('missed_tasks_his')}</Text>
+                    <Text style={[hc.sectionTitle, { color: '#D07A7A', marginTop: 10 }]}>{t('missed_tasks_his')}</Text>
                     <TaskList items={all} done={false} />
                   </>
                 ) : null;
@@ -545,7 +545,7 @@ const root = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingTop: Spacing.sm,
     paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  title: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, color: Colors.text, textAlign: 'right' },
+  title: { fontSize: FontSize.xxl, fontFamily: Fonts.serif, color: Colors.text, textAlign: 'right' },
   subtitle: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'right', marginTop: 2 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md },

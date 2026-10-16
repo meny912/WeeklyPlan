@@ -203,10 +203,10 @@ export function getEventTypeLabel(type: EventType): string {
 
 export function getEventTypeColor(type: EventType, colors: Record<string, string>): string {
   switch (type) {
-    case 'hilula': return '#9B7FCC'; // purple
+    case 'hilula': return '#9C8CC4'; // purple
     case 'geula': return colors.primary;  // gold
     case 'birthday': return colors.success; // green
-    case 'holiday': return '#5BAFD6'; // blue
+    case 'holiday': return '#7FA3C2'; // blue
     default: return colors.textSecondary;
   }
 }

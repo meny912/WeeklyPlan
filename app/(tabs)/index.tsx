@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useWeeklyPlan } from '@/hooks/useWeeklyPlan';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import { DayCard, ProgressRing } from '@/components';
 import { DAY_KEYS, calcStats, getTodayDayKey } from '@/services/weeklyPlanService';
 import { useTranslation, useDayLabels } from '@/contexts/SettingsContext';
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
+    fontFamily: Fonts.serif,
     color: Colors.text,
     textAlign: 'right',
   },

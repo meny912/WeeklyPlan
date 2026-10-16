@@ -1,20 +1,26 @@
-// Powered by OnSpace.AI
 export const Colors = {
-  background: '#0F0E0D',
-  surface: '#1C1A18',
-  surfaceElevated: '#252220',
-  border: '#2E2B28',
-  primary: '#F5A623',
-  primaryLight: '#FFD166',
-  primaryDim: 'rgba(245,166,35,0.15)',
-  text: '#F0ECE6',
-  textSecondary: '#9A9189',
-  textMuted: '#5C5650',
-  success: '#4CAF8A',
-  successDim: 'rgba(76,175,138,0.15)',
-  danger: '#E05C5C',
-  dangerDim: 'rgba(224,92,92,0.15)',
+  // Deep ink and antique gold – matches the app icon
+  background: '#121624',
+  surface: '#1A1F30',
+  surfaceElevated: '#222839',
+  border: '#2B3247',
+  primary: '#C9A55C',
+  primaryLight: '#E6CB8C',
+  primaryDim: 'rgba(201,165,92,0.14)',
+  text: '#F2EDE4',
+  textSecondary: '#A9A49A',
+  textMuted: '#6E7182',
+  success: '#7FAE95',
+  successDim: 'rgba(127,174,149,0.15)',
+  danger: '#D07A7A',
+  dangerDim: 'rgba(208,122,122,0.15)',
   white: '#FFFFFF',
+};
+
+/** Hebrew serif (Frank Ruhl Libre) for titles; body text stays in the system font. */
+export const Fonts = {
+  serif: 'FrankRuhlLibre_700Bold',
+  serifMedium: 'FrankRuhlLibre_500Medium',
 };
 
 export const Spacing = {

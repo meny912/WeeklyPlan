@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useWeeklyPlan } from '@/hooks/useWeeklyPlan';
 import { useAlert } from '@/template';
 import { useSettings, useTranslation, useDayLabels } from '@/contexts/SettingsContext';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import { DAY_KEYS, DAY_LABELS } from '@/services/weeklyPlanService';
 import { LANGUAGES, Language } from '@/services/i18n';
 import type { Region, ReminderTime } from '@/contexts/SettingsContext';
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md },
   title: {
-    fontSize: FontSize.xxl, fontWeight: FontWeight.bold,
+    fontSize: FontSize.xxl, fontFamily: Fonts.serif,
     color: Colors.text, textAlign: 'right',
   },
   subtitle: {

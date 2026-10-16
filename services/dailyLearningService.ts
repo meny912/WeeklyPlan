@@ -43,7 +43,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
     subtitle: `${dayHe} ${monthHe}`,
     description: 'לקוטי דברים – הרבי מליובאוויטש',
     icon: '✨',
-    color: '#E8A838',
+    color: '#C9A55C',
   });
 
   // 2. Tehillim — by Hebrew day of month
@@ -58,7 +58,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle,
       description: 'פרקי תהלים על פי לוח החודש',
       icon: '📜',
-      color: '#9B7FCC',
+      color: '#9C8CC4',
     });
   }
 
@@ -71,7 +71,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle: `${parasha} – ${aliya}`,
       description: 'חיתת – חומש יומי עם רש״י',
       icon: '📕',
-      color: '#F5A623',
+      color: '#C9A55C',
     });
   } catch {
     items.push({
@@ -80,7 +80,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle: 'פרשת השבוע',
       description: 'חיתת – חומש יומי',
       icon: '📕',
-      color: '#F5A623',
+      color: '#C9A55C',
     });
   }
 
@@ -93,7 +93,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle: portion.titleHe,
       description: 'ספר של בינוניים – אדמו״ר הזקן',
       icon: '📗',
-      color: '#4CAF8A',
+      color: '#7FAE95',
     });
   } catch {
     items.push({
@@ -102,7 +102,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle: 'ספר של בינוניים',
       description: 'ספר של בינוניים – אדמו״ר הזקן',
       icon: '📗',
-      color: '#4CAF8A',
+      color: '#7FAE95',
     });
   }
 
@@ -118,7 +118,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle,
       description: 'משנה תורה – מסלול 3 פרקים ליום',
       icon: '📘',
-      color: '#5BAFD6',
+      color: '#7FA3C2',
     });
   } catch {
     items.push({
@@ -127,7 +127,7 @@ export function getDailyLearning(date: Date = new Date()): LearningItem[] {
       subtitle: '3 פרקים ליום',
       description: 'משנה תורה – מסלול 3 פרקים ליום',
       icon: '📘',
-      color: '#5BAFD6',
+      color: '#7FA3C2',
     });
   }
 

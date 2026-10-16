@@ -4,14 +4,16 @@ import { HDate, Sedra } from '@hebcal/core';
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
 import { getLocalTanya, resolveDailyTanya } from '@/services/dailyTanya';
 import { getLocalRambam } from '@/services/rambamOffline';
-import { inIsrael, localISO } from '@/services/shnayimMikraService';
+import { inIsrael, localISO, fetchChumashWithRashi } from '@/services/shnayimMikraService';
 
 // ─── Types ────────────────────────────────────────────────
 export interface TextSection {
   verse: number;
   text: string;
-  /** Shnayim Mikra rows: first reading, second reading, Targum Onkelos. */
-  kind?: 'mikra' | 'mikra2' | 'targum';
+  /** Shnayim Mikra rows (verse, verse again, Targum Onkelos) and Rashi rows. */
+  kind?: 'mikra' | 'mikra2' | 'targum' | 'rashi';
+  /** Rashi: the dibbur hamatchil, shown in bold before the comment. */
+  lead?: string;
 }
 
 export interface BookContent {
@@ -725,7 +727,7 @@ export async function fetchChumashForDay(date: Date = new Date()): Promise<BookC
   }
 }
 
-// Fetch Chumash + Rashi together as two BookContent items
+// Today's aliyah with Rashi after every verse
 export async function fetchChumashWithRashiForDay(date: Date = new Date()): Promise<BookContent[]> {
   try {
     const dayOfWeek = date.getDay();
@@ -734,35 +736,15 @@ export async function fetchChumashWithRashiForDay(date: Date = new Date()): Prom
 
     const items = await fetchHebcalForShabbat(date);
     const parashaItem = items.find(i => i.category === 'parashat');
-
-    if (parashaItem && parashaItem.leyning) {
-      const leyning = parashaItem.leyning;
-      const aliyahKey = String(aliyahNum);
-      const verseRange = leyning[aliyahKey] ?? leyning['1'];
-      const parshaHe = parashaItem.hebrew ?? parashaItem.title.replace(/^Parashat\s+/, '');
-
-      if (verseRange) {
-        const results: BookContent[] = [];
-
-        // 1. Torah text
-        try {
-          const torah = await fetchFromSefaria(verseRange, `פרשת ${parshaHe} – עליה ${aliyahNameHe}`);
-          if (torah.sections.length > 0) results.push(torah);
-        } catch {}
-
-        // 2. Rashi
-        try {
-          const rashiRef = `Rashi on ${verseRange}`;
-          const rashi = await fetchFromSefaria(rashiRef, `רש״י`);
-          if (rashi.sections.length > 0) results.push(rashi);
-        } catch {}
-
-        if (results.length > 0) return results;
-      }
+    const verseRange = parashaItem?.leyning?.[String(aliyahNum)] ?? parashaItem?.leyning?.['1'];
+    if (parashaItem && verseRange) {
+      const parshaHe = (parashaItem.hebrew ?? parashaItem.title).replace(/^פרשת\s+/, '');
+      const content = await fetchChumashWithRashi(verseRange, `פרשת ${parshaHe} · עליית ${aliyahNameHe} · עם רש״י`);
+      if (content.sections.length > 0) return [content];
     }
   } catch {}
 
-  // Fallback to single item
+  // Fallback to the plain text
   const single = await fetchChumashForDay(date);
   return [single];
 }
@@ -987,7 +969,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     title: 'תהלים יומי',
     titleHe: 'תהלים',
     icon: 'תה',
-    color: '#9B7FCC',
+    color: '#9C8CC4',
     description: 'פרקי תהלים על פי לוח החודש',
   },
   tanya: {
@@ -995,7 +977,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     title: 'תניא יומי',
     titleHe: 'תניא',
     icon: 'תנ',
-    color: '#4CAF8A',
+    color: '#7FAE95',
     description: 'ספר של בינוניים – אדמו״ר הזקן',
   },
   chumash: {
@@ -1003,7 +985,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     title: 'חומש יומי',
     titleHe: 'חומש',
     icon: 'ח',
-    color: '#F5A623',
+    color: '#C9A55C',
     description: 'פרשת השבוע עם עליה יומית',
   },
   rambam: {
@@ -1011,7 +993,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     title: 'רמב״ם יומי',
     titleHe: 'רמב״ם',
     icon: 'ר',
-    color: '#5BAFD6',
+    color: '#7FA3C2',
     description: 'משנה תורה – 3 פרקים ליום',
   },
   shnayim: {
@@ -1019,7 +1001,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     title: 'שניים מקרא ואחד תרגום',
     titleHe: 'שניים מקרא',
     icon: 'ש',
-    color: '#C98A3B',
+    color: '#B8956A',
     description: 'פרשת השבוע · מקרא, מקרא ותרגום אונקלוס · הפטרה',
   },
   hayomyom: {
@@ -1027,7 +1009,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     title: 'היום יום',
     titleHe: 'היום יום',
     icon: 'ה',
-    color: '#E8A838',
+    color: '#C9A55C',
     description: 'לקוטי דברים – הרבי מליובאוויטש',
   },
 };

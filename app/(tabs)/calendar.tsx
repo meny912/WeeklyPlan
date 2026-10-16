@@ -20,23 +20,23 @@ import {
   ResolvedEvent,
   EventType,
 } from '@/services/hebrewCalendarService';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import { useTranslation } from '@/contexts/SettingsContext';
 import type { TranslationKey } from '@/services/i18n';
 
 const TYPE_COLORS: Record<EventType, string> = {
-  hilula: '#9B7FCC',
+  hilula: '#9C8CC4',
   geula: Colors.primary,
   birthday: Colors.success,
-  holiday: '#5BAFD6',
+  holiday: '#7FA3C2',
   other: Colors.textSecondary,
 };
 
 const TYPE_BG: Record<EventType, string> = {
-  hilula: 'rgba(155,127,204,0.15)',
-  geula: 'rgba(245,166,35,0.15)',
-  birthday: 'rgba(76,175,138,0.15)',
-  holiday: 'rgba(91,175,214,0.15)',
+  hilula: 'rgba(156,140,196,0.15)',
+  geula: 'rgba(201,165,92,0.15)',
+  birthday: 'rgba(127,174,149,0.15)',
+  holiday: 'rgba(127,163,194,0.15)',
   other: 'rgba(154,145,137,0.12)',
 };
 
@@ -64,7 +64,7 @@ function DaysUntilBadge({ days }: { days: number }) {
   }
   if (days <= 7) {
     return (
-      <View style={[badge.container, { backgroundColor: 'rgba(245,166,35,0.15)', borderWidth: 1, borderColor: Colors.primary }]}>
+      <View style={[badge.container, { backgroundColor: 'rgba(201,165,92,0.15)', borderWidth: 1, borderColor: Colors.primary }]}>
         <Text style={[badge.text, { color: Colors.primary }]}>
           {t('days_until_prefix')} {days} {t('days_suffix')}
         </Text>
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md },
 
   screenTitle: {
-    fontSize: FontSize.xxl, fontWeight: FontWeight.bold,
+    fontSize: FontSize.xxl, fontFamily: Fonts.serif,
     color: Colors.text, textAlign: 'right', marginBottom: Spacing.md,
   },
 
@@ -258,17 +258,17 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.border, gap: Spacing.xs,
   },
   heroTitle: { fontSize: FontSize.sm, color: Colors.textSecondary },
-  heroDate: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, color: Colors.primary, textAlign: 'center' },
+  heroDate: { fontSize: FontSize.xxl, fontFamily: Fonts.serif, color: Colors.primary, textAlign: 'center' },
   heroGreg: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: 'center' },
 
   nextCard: {
-    backgroundColor: 'rgba(245,166,35,0.07)', borderRadius: Radius.lg, padding: Spacing.md,
-    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(245,166,35,0.3)', gap: Spacing.sm,
+    backgroundColor: 'rgba(201,165,92,0.07)', borderRadius: Radius.lg, padding: Spacing.md,
+    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(201,165,92,0.3)', gap: Spacing.sm,
   },
   nextHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, justifyContent: 'flex-end' },
   nextTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.primary },
   nextBody: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  nextEventTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right' },
+  nextEventTitle: { fontSize: FontSize.md, fontFamily: Fonts.serifMedium, color: Colors.text, textAlign: 'right' },
   nextEventSub: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'right' },
   nextDate: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: 'right', marginTop: 2 },
 
@@ -297,18 +297,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border,
     overflow: 'hidden', gap: Spacing.sm, paddingRight: Spacing.md, paddingVertical: 14,
   },
-  eventCardToday: { borderColor: Colors.primary, borderWidth: 1.5, backgroundColor: 'rgba(245,166,35,0.05)' },
-  eventCardSoon: { borderColor: 'rgba(245,166,35,0.4)' },
+  eventCardToday: { borderColor: Colors.primary, borderWidth: 1.5, backgroundColor: 'rgba(201,165,92,0.05)' },
+  eventCardSoon: { borderColor: 'rgba(201,165,92,0.4)' },
   accentBar: { width: 4, alignSelf: 'stretch', borderTopLeftRadius: Radius.lg, borderBottomLeftRadius: Radius.lg },
   dateTile: {
     width: 52, paddingVertical: 6, borderRadius: Radius.md, borderWidth: 1,
     backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center',
   },
-  dateTileDay: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  dateTileDay: { fontSize: FontSize.lg, fontFamily: Fonts.serif },
   dateTileMonth: { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
   eventBody: { flex: 1, gap: 4 },
   eventTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-  eventTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right', flex: 1 },
+  eventTitle: { fontSize: FontSize.md, fontFamily: Fonts.serifMedium, color: Colors.text, textAlign: 'right', flex: 1 },
   eventSubtitle: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'right' },
   eventMeta: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,

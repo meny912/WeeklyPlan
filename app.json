@@ -17,7 +17,7 @@
       "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1a1a18"
+        "backgroundColor": "#121624"
       },
       "edgeToEdgeEnabled": true,
       "blockedPermissions": [
@@ -59,7 +59,7 @@
           "image": "./assets/images/app-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#1a1a18"
+          "backgroundColor": "#121624"
         }
       ],
       "expo-web-browser",

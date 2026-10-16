@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import {
   BookContent,
   LearningType,
@@ -44,7 +44,19 @@ const GREEN = '#1B7A3D';
 const HAIRLINE = '#E5E5E5';
 
 // ─── Verse Component ──────────────────────────────────────
-function VerseRow({ verse, text, fontSize, kind }: { verse: number; text: string; fontSize: number; kind?: TextSection['kind'] }) {
+function VerseRow({ verse, text, fontSize, kind, lead }: { verse: number; text: string; fontSize: number; kind?: TextSection['kind']; lead?: string }) {
+  if (kind === 'rashi') {
+    const size = fontSize - 3;
+    return (
+      <View style={[verseStyles.row, verseStyles.rowRashi]}>
+        <Text style={verseStyles.tag}>רש״י</Text>
+        <Text style={[verseStyles.text, verseStyles.rashiText, { fontSize: size, lineHeight: size * 1.7 }]}>
+          {lead ? <Text style={verseStyles.rashiLead}>{lead} </Text> : null}
+          {text}
+        </Text>
+      </View>
+    );
+  }
   if (kind === 'mikra2' || kind === 'targum') {
     const isTargum = kind === 'targum';
     const size = isTargum ? fontSize - 2 : fontSize;
@@ -79,6 +91,9 @@ const verseStyles = StyleSheet.create({
     textAlign: 'center',
   },
   targumText: { color: '#4A4A4A' },
+  rowRashi: { marginBottom: 6, paddingRight: Spacing.sm },
+  rashiText: { color: '#3A3A3A' },
+  rashiLead: { fontWeight: FontWeight.bold, color: INK },
   num: {
     fontSize: FontSize.xs,
     color: GREEN,
@@ -107,7 +122,7 @@ function BookSection({ content, accentColor, fontSize }: { content: BookContent;
         ) : null}
       </View>
       {content.sections.map((s, i) => (
-        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} />
+        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} lead={s.lead} />
       ))}
     </View>
   );
@@ -122,7 +137,7 @@ const secStyles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+    fontFamily: Fonts.serif,
     textAlign: 'right',
   },
   ref: {
@@ -321,7 +336,7 @@ export default function ReaderScreen() {
   };
 
   const totalVerses = contents.reduce(
-    (sum, c) => sum + c.sections.filter(s => s.kind !== 'mikra2' && s.kind !== 'targum').length,
+    (sum, c) => sum + c.sections.filter(s => s.kind !== 'mikra2' && s.kind !== 'targum' && s.kind !== 'rashi').length,
     0,
   );
 
@@ -576,7 +591,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcon: { fontSize: 18, fontWeight: FontWeight.bold },
+  headerIcon: { fontSize: 20, fontFamily: Fonts.serif },
   headerTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
