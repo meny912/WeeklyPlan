@@ -4,11 +4,14 @@ import { Stack } from 'expo-router';
 import { WeeklyPlanProvider } from '@/contexts/WeeklyPlanContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts, FrankRuhlLibre_500Medium, FrankRuhlLibre_700Bold } from '@expo-google-fonts/frank-ruhl-libre';
+import { useFonts } from 'expo-font';
 
 export default function RootLayout() {
   // Titles fall back to the system font until the serif is loaded.
-  useFonts({ FrankRuhlLibre_500Medium, FrankRuhlLibre_700Bold });
+  useFonts({
+    FrankRuhlLibre_500Medium: require('../assets/fonts/FrankRuhlLibre_500Medium.ttf'),
+    FrankRuhlLibre_700Bold: require('../assets/fonts/FrankRuhlLibre_700Bold.ttf'),
+  });
   return (
     <AlertProvider>
       <SafeAreaProvider>
