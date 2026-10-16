@@ -1,5 +1,5 @@
-// Powered by OnSpace.AI
-import { HDate, Sedra } from '@hebcal/core';
+import { HDate, Sedra, Locale } from '@hebcal/core';
+import { inIsrael } from '@/services/shnayimMikraService';
 import { getTehillimChaptersForDay, getRambam3ChaptersForDay, getTanyaPortionForDay } from '@/services/sefariaService';
 import { hebrewDayToGematria, hebrewMonthDisplay } from '@/services/hebrewCalendarService';
 
@@ -18,10 +18,12 @@ function getChumashForDay(hdate: HDate): { parasha: string; aliya: string } {
   const aliyaNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
   const aliyaIdx = dayOfWeek === 6 ? 6 : dayOfWeek;
   try {
-    const sedra = new Sedra(hdate.getFullYear(), false);
+    const sedra = new Sedra(hdate.getFullYear(), inIsrael());
     const result = sedra.lookup(hdate);
     if (result && !result.chag) {
-      const parsha = Array.isArray(result.parsha) ? result.parsha.join(' – ') : String(result.parsha);
+      const names = (Array.isArray(result.parsha) ? result.parsha : [String(result.parsha)])
+        .map((n: string) => Locale.gettext(n, 'he-x-NoNikud'));
+      const parsha = names.join('–');
       return { parasha: `פרשת ${parsha}`, aliya: `עליה ${aliyaNames[aliyaIdx] ?? 'ראשון'}` };
     }
   } catch {}

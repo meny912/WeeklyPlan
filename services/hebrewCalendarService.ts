@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 import { HDate, months } from '@hebcal/core';
 
 export type EventType = 'hilula' | 'geula' | 'birthday' | 'holiday' | 'other';
@@ -6,227 +5,67 @@ export type EventType = 'hilula' | 'geula' | 'birthday' | 'holiday' | 'other';
 export interface ChassidicEvent {
   id: string;
   hebrewDay: number;
-  hebrewMonth: number; // @hebcal/core month numbers
+  hebrewMonth: number; // @hebcal/core month numbers (ADAR_I = Adar in a regular year)
+  /** In a leap year, which Adar the day falls in. Birthdays and Purim-like days
+   *  go to Adar II; a yahrzeit stays in Adar I. */
+  leapAdar?: 'I' | 'II';
   title: string;
   subtitle?: string;
   type: EventType;
-  icon: string;
 }
 
 // Month numbers from @hebcal/core months enum
 // NISAN=1, IYAR=2, SIVAN=3, TAMUZ=4, AV=5, ELUL=6,
-// TISHREI=7, CHESHVAN=8, KISLEV=9, TEVET=10, SHVAT=11, ADAR_I=12
+// TISHREI=7, CHESHVAN=8, KISLEV=9, TEVET=10, SHVAT=11, ADAR_I=12, ADAR_II=13
 
+const ev = (
+  id: string, hebrewDay: number, hebrewMonth: number, type: EventType,
+  title: string, subtitle?: string, leapAdar?: 'I' | 'II',
+): ChassidicEvent => ({ id, hebrewDay, hebrewMonth, type, title, subtitle, leapAdar });
+
+// Days of the Chabad calendar (Luach Kollel Chabad / Sefer HaMinhagim).
 export const CHASSIDIC_EVENTS: ChassidicEvent[] = [
   // תשרי
-  {
-    id: 'yud_gimel_tishrei',
-    hebrewDay: 13,
-    hebrewMonth: months.TISHREI,
-    title: 'יום הסתלקות הרבנית חנה',
-    subtitle: 'י״ג תשרי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
-  {
-    id: 'kuf_tishrei',
-    hebrewDay: 20,
-    hebrewMonth: months.TISHREI,
-    title: 'יום הסתלקות המהר״ש',
-    subtitle: 'כ׳ תשרי · האדמו״ר הרביעי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
+  ev('vav_tishrei', 6, months.TISHREI, 'hilula', 'יום ההילולא של הרבנית חנה', 'אמו של הרבי · תשכ״ה'),
+  ev('yud_gimel_tishrei', 13, months.TISHREI, 'hilula', 'יום ההילולא של אדמו״ר מהר״ש', 'האדמו״ר הרביעי · תרמ״ג'),
   // חשוון
-  {
-    id: 'kuf_cheshvan',
-    hebrewDay: 20,
-    hebrewMonth: months.CHESHVAN,
-    title: 'יום הולדת הרש״ב',
-    subtitle: 'כ׳ חשוון · האדמו״ר החמישי',
-    type: 'birthday',
-    icon: '👑',
-  },
+  ev('chaf_cheshvan', 20, months.CHESHVAN, 'birthday', 'יום הולדת אדמו״ר הרש״ב', 'האדמו״ר החמישי · תרכ״א'),
   // כסלו
-  {
-    id: 'yud_kislev',
-    hebrewDay: 10,
-    hebrewMonth: months.KISLEV,
-    title: 'חג הגאולה – האדמו״ר האמצעי',
-    subtitle: 'י׳ כסלו',
-    type: 'geula',
-    icon: '✨',
-  },
-  {
-    id: 'yud_tet_kislev',
-    hebrewDay: 19,
-    hebrewMonth: months.KISLEV,
-    title: 'י״ט כסלו – ראש השנה לחסידות',
-    subtitle: 'חג הגאולה של האדמו״ר הזקן',
-    type: 'geula',
-    icon: '✨',
-  },
-  {
-    id: 'kuf_kislev',
-    hebrewDay: 20,
-    hebrewMonth: months.KISLEV,
-    title: 'יום הסתלקות המגיד ממזריטש',
-    subtitle: 'כ׳ כסלו',
-    type: 'hilula',
-    icon: '🕯️',
-  },
+  ev('tes_kislev_birth', 9, months.KISLEV, 'birthday', 'יום הולדת אדמו״ר האמצעי', 'האדמו״ר השני · תקל״ד'),
+  ev('tes_kislev_hilula', 9, months.KISLEV, 'hilula', 'יום ההילולא של אדמו״ר האמצעי', 'האדמו״ר השני · תקפ״ח'),
+  ev('yud_kislev', 10, months.KISLEV, 'geula', 'חג הגאולה של אדמו״ר האמצעי', 'תקפ״ז'),
+  ev('yud_dalet_kislev', 14, months.KISLEV, 'other', 'יום חתונת הרבי והרבנית', 'תרפ״ט'),
+  ev('yud_tes_kislev', 19, months.KISLEV, 'geula', 'י״ט כסלו – ראש השנה לחסידות', 'חג הגאולה של אדמו״ר הזקן · תקנ״ט'),
+  ev('yud_tes_kislev_maggid', 19, months.KISLEV, 'hilula', 'יום ההילולא של המגיד ממעזריטש', 'תקל״ג'),
   // טבת
-  {
-    id: 'hey_tevet',
-    hebrewDay: 5,
-    hebrewMonth: months.TEVET,
-    title: '"דידן נצח"',
-    subtitle: 'ה׳ טבת · ניצחון הספרים',
-    type: 'holiday',
-    icon: '📚',
-  },
-  {
-    id: 'kuf_dalet_tevet',
-    hebrewDay: 24,
-    hebrewMonth: months.TEVET,
-    title: 'יום הסתלקות האדמו״ר הזקן',
-    subtitle: 'כ״ד טבת · בעל התניא',
-    type: 'hilula',
-    icon: '🕯️',
-  },
+  ev('hey_tevet', 5, months.TEVET, 'geula', 'ה׳ טבת – דידן נצח', 'ניצחון הספרים · תשמ״ז'),
+  ev('chaf_dalet_tevet', 24, months.TEVET, 'hilula', 'יום ההילולא של אדמו״ר הזקן', 'בעל התניא והשולחן ערוך · תקע״ג'),
   // שבט
-  {
-    id: 'yud_shvat',
-    hebrewDay: 10,
-    hebrewMonth: months.SHVAT,
-    title: 'יום הסתלקות הריי״צ',
-    subtitle: 'י׳ שבט · קבלת הנשיאות של הרבי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
-  {
-    id: 'kuf_bet_shvat',
-    hebrewDay: 22,
-    hebrewMonth: months.SHVAT,
-    title: 'יום הסתלקות הרבנית חיה מושקא',
-    subtitle: 'כ״ב שבט',
-    type: 'hilula',
-    icon: '🕯️',
-  },
+  ev('yud_shvat', 10, months.SHVAT, 'hilula', 'יום ההילולא של אדמו״ר הריי״צ', 'תש״י · ותחילת נשיאות הרבי, תשי״א'),
+  ev('chaf_beis_shvat', 22, months.SHVAT, 'hilula', 'יום ההילולא של הרבנית חיה מושקא', 'תשמ״ח'),
   // אדר
-  {
-    id: 'zayin_adar',
-    hebrewDay: 7,
-    hebrewMonth: months.ADAR_I,
-    title: 'יום הולדת והסתלקות משה רבנו',
-    subtitle: 'ז׳ אדר',
-    type: 'hilula',
-    icon: '⭐',
-  },
-  {
-    id: 'yud_alef_adar',
-    hebrewDay: 11,
-    hebrewMonth: months.ADAR_I,
-    title: 'יום הסתלקות אדמו״ר מהר״ש',
-    subtitle: 'י״א אדר · האדמו״ר הרביעי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
+  ev('zayin_adar', 7, months.ADAR_I, 'hilula', 'יום הולדת ויום הסתלקות משה רבנו', undefined, 'I'),
+  ev('chaf_hey_adar', 25, months.ADAR_I, 'birthday', 'יום הולדת הרבנית חיה מושקא', 'תרס״א', 'II'),
   // ניסן
-  {
-    id: 'bet_nisan',
-    hebrewDay: 2,
-    hebrewMonth: months.NISAN,
-    title: 'יום הסתלקות האדמו״ר הרש״ב',
-    subtitle: 'ב׳ ניסן · האדמו״ר החמישי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
-  {
-    id: 'yud_alef_nisan',
-    hebrewDay: 11,
-    hebrewMonth: months.NISAN,
-    title: 'יום הולדת הרבי',
-    subtitle: 'י״א ניסן · כ"ק אדמו"ר',
-    type: 'birthday',
-    icon: '👑',
-  },
-  {
-    id: 'yud_gimel_nisan',
-    hebrewDay: 13,
-    hebrewMonth: months.NISAN,
-    title: 'יום הסתלקות הצמח צדק',
-    subtitle: 'י״ג ניסן · האדמו״ר השלישי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
+  ev('beis_nisan', 2, months.NISAN, 'hilula', 'יום ההילולא של אדמו״ר הרש״ב', 'האדמו״ר החמישי · תר״ף'),
+  ev('yud_alef_nisan', 11, months.NISAN, 'birthday', 'יום הולדת הרבי', 'י״א ניסן · תרס״ב'),
+  ev('yud_gimel_nisan', 13, months.NISAN, 'hilula', 'יום ההילולא של הצמח צדק', 'האדמו״ר השלישי · תרכ״ו'),
   // אייר
-  {
-    id: 'bet_iyar',
-    hebrewDay: 2,
-    hebrewMonth: months.IYAR,
-    title: 'יום הולדת אדמו״ר מהר״ש',
-    subtitle: 'ב׳ אייר · האדמו״ר הרביעי',
-    type: 'birthday',
-    icon: '👑',
-  },
-  {
-    id: 'yud_dalet_iyar',
-    hebrewDay: 14,
-    hebrewMonth: months.IYAR,
-    title: 'פסח שני',
-    subtitle: 'י״ד אייר',
-    type: 'holiday',
-    icon: '🫓',
-  },
-  {
-    id: 'yud_chet_iyar',
-    hebrewDay: 18,
-    hebrewMonth: months.IYAR,
-    title: 'ל״ג בעומר',
-    subtitle: 'י״ח אייר',
-    type: 'holiday',
-    icon: '🔥',
-  },
+  ev('beis_iyar', 2, months.IYYAR, 'birthday', 'יום הולדת אדמו״ר מהר״ש', 'האדמו״ר הרביעי · תקצ״ד'),
+  ev('pesach_sheni', 14, months.IYYAR, 'holiday', 'פסח שני'),
+  ev('lag_baomer', 18, months.IYYAR, 'holiday', 'ל״ג בעומר', 'יום ההילולא של רשב״י'),
+  // סיון
+  ev('chaf_ches_sivan', 28, months.SIVAN, 'geula', 'הצלת הרבי והגעתו לארצות הברית', 'תש״א'),
   // תמוז
-  {
-    id: 'gimel_tamuz',
-    hebrewDay: 3,
-    hebrewMonth: months.TAMUZ,
-    title: 'ג׳ תמוז',
-    subtitle: 'יום הסתלקות הרבי',
-    type: 'hilula',
-    icon: '🕯️',
-  },
-  {
-    id: 'yud_bet_tamuz',
-    hebrewDay: 12,
-    hebrewMonth: months.TAMUZ,
-    title: 'חג הגאולה של הריי״צ',
-    subtitle: 'י״ב–י״ג תמוז',
-    type: 'geula',
-    icon: '✨',
-  },
+  ev('gimmel_tammuz', 3, months.TAMUZ, 'hilula', 'ג׳ תמוז – יום ההילולא של הרבי', 'תשנ״ד'),
+  ev('yud_beis_tammuz', 12, months.TAMUZ, 'geula', 'חג הגאולה של אדמו״ר הריי״צ', 'י״ב–י״ג תמוז · תרפ״ז · ויום הולדתו, תר״ם'),
   // אב
-  {
-    id: 'tet_vav_av',
-    hebrewDay: 15,
-    hebrewMonth: months.AV,
-    title: 'ט״ו באב',
-    subtitle: 'ט״ו אב',
-    type: 'holiday',
-    icon: '🌕',
-  },
+  ev('tu_beav', 15, months.AV, 'holiday', 'ט״ו באב'),
+  ev('chaf_av', 20, months.AV, 'hilula', 'יום ההילולא של הרב לוי יצחק', 'אביו של הרבי · תש״ד'),
   // אלול
-  {
-    id: 'chai_elul',
-    hebrewDay: 18,
-    hebrewMonth: months.ELUL,
-    title: 'ח״י אלול – "חי אלול"',
-    subtitle: 'יום הולדת הבעש״ט והאדמו״ר הזקן',
-    type: 'birthday',
-    icon: '🌟',
-  },
+  ev('tes_vav_elul', 15, months.ELUL, 'other', 'ייסוד ישיבת תומכי תמימים', 'תרנ״ז'),
+  ev('chai_elul', 18, months.ELUL, 'birthday', 'ח״י אלול', 'יום הולדת הבעל שם טוב ואדמו״ר הזקן'),
+  ev('chaf_tes_elul', 29, months.ELUL, 'birthday', 'יום הולדת הצמח צדק', 'האדמו״ר השלישי · תקמ״ט'),
 ];
 
 export interface ResolvedEvent extends ChassidicEvent {
@@ -234,11 +73,13 @@ export interface ResolvedEvent extends ChassidicEvent {
   daysUntil: number;
   isPast: boolean;
   isToday: boolean;
+  /** The Hebrew month the day actually falls in this year (Adar I / II resolved). */
+  resolvedMonth: number;
 }
 
 export function getTodayHebrew(): { hdate: HDate; display: string } {
   const hdate = new HDate(new Date());
-  const display = hdate.render('he');
+  const display = hdate.renderGematriya(true);
   return { hdate, display };
 }
 
@@ -296,57 +137,50 @@ export async function hebrewToGreg(day: number, month: number, year: number): Pr
   }
 }
 
-// Synchronous fallback using HDate (may have small timezone issues)
+// HDate.greg() returns *local* midnight. Read the local calendar parts — reading
+// the UTC parts shifted every day one day earlier east of Greenwich.
 function hdateToGreg(hd: HDate): Date {
   const g = hd.greg();
-  return new Date(Date.UTC(g.getUTCFullYear(), g.getUTCMonth(), g.getUTCDate(), 12, 0, 0));
+  return new Date(Date.UTC(g.getFullYear(), g.getMonth(), g.getDate(), 12, 0, 0));
 }
 
 function utcDayOf(d: Date): number {
   return Math.floor(d.getTime() / 86400000);
 }
 
-// Resolve events synchronously using HDate (fast, called in render)
-// Async version using Hebcal API is called in hebrewCalendarService.resolveEventsAsync
+function monthInYear(event: ChassidicEvent, year: number): number {
+  if (event.hebrewMonth === months.ADAR_I && HDate.isLeapYear(year) && event.leapAdar === 'II') {
+    return months.ADAR_II;
+  }
+  return event.hebrewMonth;
+}
+
 export function resolveEvents(): ResolvedEvent[] {
   const now = new Date();
-  const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0));
-  const todayDay = utcDayOf(todayUTC);
-
-  const todayHDate = new HDate(now);
-  const currentHebrewYear = todayHDate.getFullYear();
+  const todayDay = utcDayOf(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0)));
+  const year = new HDate(now).getFullYear();
 
   return CHASSIDIC_EVENTS.map(event => {
-    let gregDate: Date;
-    let daysUntil: number;
-
-    try {
-      // Use Hebcal HDate for current year
-      const eventHDate = new HDate(event.hebrewDay, event.hebrewMonth, currentHebrewYear);
-      const g = eventHDate.greg();
-      gregDate = new Date(Date.UTC(g.getUTCFullYear(), g.getUTCMonth(), g.getUTCDate(), 12, 0, 0));
-      daysUntil = utcDayOf(gregDate) - todayDay;
-
-      if (daysUntil < 0) {
-        // Past this year → compute next Hebrew year
-        const nextHDate = new HDate(event.hebrewDay, event.hebrewMonth, currentHebrewYear + 1);
-        const gNext = nextHDate.greg();
-        gregDate = new Date(Date.UTC(gNext.getUTCFullYear(), gNext.getUTCMonth(), gNext.getUTCDate(), 12, 0, 0));
-        daysUntil = utcDayOf(gregDate) - todayDay;
-      }
-    } catch {
-      gregDate = todayUTC;
-      daysUntil = 365;
+    let y = year;
+    let month = monthInYear(event, y);
+    let gregDate = hdateToGreg(new HDate(event.hebrewDay, month, y));
+    if (utcDayOf(gregDate) < todayDay) {
+      y = year + 1;
+      month = monthInYear(event, y);
+      gregDate = hdateToGreg(new HDate(event.hebrewDay, month, y));
     }
-
-    return {
-      ...event,
-      gregDate,
-      daysUntil,
-      isPast: false,
-      isToday: daysUntil === 0,
-    };
+    const daysUntil = utcDayOf(gregDate) - todayDay;
+    return { ...event, gregDate, daysUntil, isPast: false, isToday: daysUntil === 0, resolvedMonth: month };
   }).sort((a, b) => a.daysUntil - b.daysUntil);
+}
+
+/** Short Hebrew month label for an event's resolved month ("אדר א׳" in a leap year). */
+export function eventMonthLabel(e: ResolvedEvent): string {
+  if (e.resolvedMonth === months.ADAR_I) {
+    const y = new HDate(e.gregDate).getFullYear();
+    return HDate.isLeapYear(y) ? 'אדר א׳' : 'אדר';
+  }
+  return hebrewMonthName(e.resolvedMonth);
 }
 
 export function formatGregDate(date: Date): string {

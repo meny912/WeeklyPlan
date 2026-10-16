@@ -1,15 +1,17 @@
-// Powered by OnSpace.AI
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HDate, Sedra } from '@hebcal/core';
 // Static import – avoids dynamic-import failures that caused the wrong chapter to appear
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
 import { getLocalTanya, resolveDailyTanya } from '@/services/dailyTanya';
 import { getLocalRambam } from '@/services/rambamOffline';
+import { inIsrael, localISO } from '@/services/shnayimMikraService';
 
 // ─── Types ────────────────────────────────────────────────
 export interface TextSection {
   verse: number;
   text: string;
+  /** Shnayim Mikra rows: first reading, second reading, Targum Onkelos. */
+  kind?: 'mikra' | 'mikra2' | 'targum';
 }
 
 export interface BookContent {
@@ -634,8 +636,9 @@ function getShabbatDate(date: Date): Date {
 
 async function fetchHebcalForShabbat(date: Date): Promise<HebcalItem[]> {
   const shabbat = getShabbatDate(date);
-  const dateStr = shabbat.toISOString().split('T')[0];
-  const cacheKey = HEBCAL_CACHE_PREFIX + 'shabbat_' + dateStr;
+  const dateStr = localISO(shabbat); // toISOString() would give the UTC (previous) day
+  const il = inIsrael();
+  const cacheKey = HEBCAL_CACHE_PREFIX + 'shabbat_' + dateStr + (il ? '_il' : '');
 
   try {
     const cached = await AsyncStorage.getItem(cacheKey);
@@ -646,7 +649,7 @@ async function fetchHebcalForShabbat(date: Date): Promise<HebcalItem[]> {
   } catch {}
 
   try {
-    const url = `https://www.hebcal.com/hebcal?v=1&cfg=json&s=on&leyning=on&i=on&start=${dateStr}&end=${dateStr}`;
+    const url = `https://www.hebcal.com/hebcal?v=1&cfg=json&s=on&leyning=on&i=${il ? 'on' : 'off'}&start=${dateStr}&end=${dateStr}`;
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!resp.ok) return [];
     const data = await resp.json();
@@ -967,7 +970,7 @@ export async function fetchHayomYomForDay(date: Date = new Date()): Promise<Book
 }
 
 // ─── Exports ──────────────────────────────────────────────
-export type LearningType = 'tehillim' | 'tanya' | 'chumash' | 'rambam' | 'hayomyom';
+export type LearningType = 'tehillim' | 'tanya' | 'chumash' | 'rambam' | 'hayomyom' | 'shnayim';
 
 export interface ReaderConfig {
   type: LearningType;
@@ -983,7 +986,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     type: 'tehillim',
     title: 'תהלים יומי',
     titleHe: 'תהלים',
-    icon: '📜',
+    icon: 'תה',
     color: '#9B7FCC',
     description: 'פרקי תהלים על פי לוח החודש',
   },
@@ -991,7 +994,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     type: 'tanya',
     title: 'תניא יומי',
     titleHe: 'תניא',
-    icon: '📗',
+    icon: 'תנ',
     color: '#4CAF8A',
     description: 'ספר של בינוניים – אדמו״ר הזקן',
   },
@@ -999,7 +1002,7 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     type: 'chumash',
     title: 'חומש יומי',
     titleHe: 'חומש',
-    icon: '📕',
+    icon: 'ח',
     color: '#F5A623',
     description: 'פרשת השבוע עם עליה יומית',
   },
@@ -1007,15 +1010,23 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     type: 'rambam',
     title: 'רמב״ם יומי',
     titleHe: 'רמב״ם',
-    icon: '📘',
+    icon: 'ר',
     color: '#5BAFD6',
     description: 'משנה תורה – 3 פרקים ליום',
+  },
+  shnayim: {
+    type: 'shnayim',
+    title: 'שניים מקרא ואחד תרגום',
+    titleHe: 'שניים מקרא',
+    icon: 'ש',
+    color: '#C98A3B',
+    description: 'פרשת השבוע · מקרא, מקרא ותרגום אונקלוס · הפטרה',
   },
   hayomyom: {
     type: 'hayomyom',
     title: 'היום יום',
     titleHe: 'היום יום',
-    icon: '✨',
+    icon: 'ה',
     color: '#E8A838',
     description: 'לקוטי דברים – הרבי מליובאוויטש',
   },

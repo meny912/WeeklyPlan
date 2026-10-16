@@ -1,5 +1,4 @@
 
-// Powered by OnSpace.AI
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -39,7 +38,7 @@ function useLearningCategories() {
       title: 'היום יום',
       subtitle: t('cat_hayomyom_sub'),
       description: t('cat_hayomyom_desc'),
-      icon: '✨',
+      icon: 'ה',
       color: '#E8A838',
       bgColor: '#E8A83815',
     },
@@ -48,7 +47,7 @@ function useLearningCategories() {
       title: 'תהלים',
       subtitle: t('cat_tehillim_sub'),
       description: t('cat_tehillim_desc'),
-      icon: '📜',
+      icon: 'תה',
       color: '#9B7FCC',
       bgColor: '#9B7FCC15',
     },
@@ -57,16 +56,25 @@ function useLearningCategories() {
       title: 'חומש',
       subtitle: t('cat_chumash_sub'),
       description: t('cat_chumash_desc'),
-      icon: '📕',
+      icon: 'ח',
       color: '#E67E45',
       bgColor: '#E67E4515',
+    },
+    {
+      id: 'shnayim',
+      title: 'שניים מקרא ואחד תרגום',
+      subtitle: t('cat_shnayim_sub'),
+      description: t('cat_shnayim_desc'),
+      icon: 'ש',
+      color: '#C98A3B',
+      bgColor: '#C98A3B15',
     },
     {
       id: 'tanya',
       title: 'תניא',
       subtitle: t('cat_tanya_sub'),
       description: t('cat_tanya_desc'),
-      icon: '📗',
+      icon: 'תנ',
       color: '#4CAF8A',
       bgColor: '#4CAF8A15',
     },
@@ -75,7 +83,7 @@ function useLearningCategories() {
       title: 'רמב״ם',
       subtitle: t('cat_rambam_sub'),
       description: t('cat_rambam_desc'),
-      icon: '📘',
+      icon: 'ר',
       color: '#5BAFD6',
       bgColor: '#5BAFD615',
     },
@@ -101,7 +109,6 @@ function ZmanRow({ item, now }: { item: ZmanDisplay; now: Date }) {
         <Text style={[zmanStyles.label, isPast && zmanStyles.labelPast]}>{item.label}</Text>
         {item.sublabel ? <Text style={zmanStyles.sublabel}>{item.sublabel}</Text> : null}
       </View>
-      <Text style={zmanStyles.icon}>{item.icon}</Text>
     </View>
   );
 }
@@ -144,7 +151,7 @@ function CategoryCard({
       <View style={catStyles.cardInner}>
         <View style={catStyles.cardTop}>
           <View style={[catStyles.iconWrap, { backgroundColor: bgColor }]}>
-            <Text style={catStyles.icon}>{icon}</Text>
+            <Text style={[catStyles.icon, { color }]}>{icon}</Text>
           </View>
           <View style={catStyles.body}>
             <Text style={catStyles.title}>{title}</Text>
@@ -177,7 +184,7 @@ const catStyles = StyleSheet.create({
     paddingRight: Spacing.sm, paddingVertical: Spacing.md,
   },
   iconWrap: { width: 52, height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  icon: { fontSize: 28 },
+  icon: { fontSize: 22, fontWeight: FontWeight.bold },
   body: { flex: 1, gap: 2 },
   title: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text, textAlign: 'right' },
   subtitle: { fontSize: FontSize.sm, color: Colors.primary, fontWeight: FontWeight.semibold, textAlign: 'right' },
@@ -221,14 +228,13 @@ const prayerStyles = StyleSheet.create({
 });
 
 // ─── Section Header ────────────────────────────────────────
-function SectionHeader({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) {
+function SectionHeader({ title, subtitle }: { icon?: string; title: string; subtitle?: string }) {
   return (
     <View style={secStyles.container}>
       <View style={{ gap: 2 }}>
         <Text style={secStyles.title}>{title}</Text>
         {subtitle ? <Text style={secStyles.subtitle}>{subtitle}</Text> : null}
       </View>
-      <Text style={secStyles.icon}>{icon}</Text>
     </View>
   );
 }
@@ -402,7 +408,7 @@ export default function TodayScreen() {
               {now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })}
             </Text>
             {nextZman && activeTab === 'zmanim' ? (
-              <Text style={styles.nextZmanPill}>{nextZman.icon} {formatZmanTime(nextZman.iso)}</Text>
+              <Text style={styles.nextZmanPill}>{formatZmanTime(nextZman.iso)}</Text>
             ) : null}
           </View>
         </View>
@@ -419,7 +425,7 @@ export default function TodayScreen() {
                 onPress={() => router.push({ pathname: '/reader', params: { type: 'hayomyom' } })}
               >
                 <View style={styles.inspirationHeader}>
-                  <Text style={styles.inspirationIcon}>✨</Text>
+                  <MaterialIcons name="format-quote" size={18} color={Colors.primary} />
                   <Text style={styles.inspirationLabel}>היום יום – {todayHebrewLabel}</Text>
                   <MaterialIcons name="chevron-left" size={16} color={Colors.primary} />
                 </View>
@@ -493,7 +499,7 @@ export default function TodayScreen() {
               </View>
             ) : zmanimError ? (
               <View style={styles.errorBox}>
-                <Text style={styles.errorIcon}>⚠️</Text>
+                <MaterialIcons name="error-outline" size={36} color={Colors.textMuted} />
                 <Text style={styles.errorText}>{zmanimError}</Text>
                 <Pressable style={styles.retryBtn} onPress={() => loadZmanim(true)}>
                   <Text style={styles.retryText}>{t('retry_btn')}</Text>

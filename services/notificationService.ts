@@ -68,7 +68,7 @@ export async function scheduleDailyReminder(config: ReminderConfig): Promise<boo
     const id = await Notifications.scheduleNotificationAsync({
       identifier: NOTIF_IDENTIFIER,
       content: {
-        title: config.titleHe ?? '📗 שיעור תניא יומי',
+        title: config.titleHe ?? 'שיעור תניא יומי',
         body:  config.bodyHe  ?? 'הגיע הזמן ללמוד את השיעור היומי!',
         data:  { type: 'daily_reminder' },
         sound: true,

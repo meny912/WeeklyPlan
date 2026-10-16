@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
@@ -41,13 +40,6 @@ function percentBg(p: number) {
   if (p >= 80) return Colors.successDim;
   if (p >= 50) return '#4F46E515';
   return '#FF6B6B15';
-}
-
-function medalEmoji(p: number) {
-  if (p === 100) return '🏆';
-  if (p >= 80)  return '🥇';
-  if (p >= 50)  return '🥈';
-  return '🎯';
 }
 
 // ─── Tiny progress bar ──────────────────────────────────────
@@ -256,7 +248,7 @@ function ThisWeekTab() {
 
       {stats.total === 0 && (
         <View style={tw.emptyCard}>
-          <Text style={tw.emptyIcon}>📋</Text>
+          <MaterialIcons name="checklist" size={36} color={Colors.textMuted} />
           <Text style={tw.emptyTitle}>{t('no_tasks_this_week')}</Text>
           <Text style={tw.emptyDesc}>{t('add_tasks_hint')}</Text>
         </View>
@@ -330,7 +322,6 @@ function HistoryCard({ entry }: { entry: WeekHistoryEntry }) {
     <View style={hc.card}>
       <Pressable style={hc.header} onPress={toggle} hitSlop={{ top: 6, bottom: 6 }}>
         <View style={hc.left}>
-          <Text style={hc.medal}>{medalEmoji(entry.completionPercent)}</Text>
           <View>
             <Text style={hc.weekLabel}>{formatWeekRange(entry.weekKey)}</Text>
             <Text style={hc.weekSub}>{entry.doneTasks} / {entry.totalTasks} {t('tasks_count_label')}</Text>
@@ -455,7 +446,7 @@ function HistoryTab() {
   if (history.length === 0) {
     return (
       <View style={ht.empty}>
-        <Text style={ht.emptyIcon}>📅</Text>
+        <MaterialIcons name="event-note" size={44} color={Colors.textMuted} />
         <Text style={ht.emptyTitle}>{t('no_history_title')}</Text>
         <Text style={ht.emptyDesc}>{t('no_history_desc')}</Text>
       </View>

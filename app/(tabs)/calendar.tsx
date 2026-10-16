@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -17,6 +16,7 @@ import {
   getEventTypeColor,
   hebrewDayToGematria,
   hebrewMonthDisplay,
+  eventMonthLabel,
   ResolvedEvent,
   EventType,
 } from '@/services/hebrewCalendarService';
@@ -94,6 +94,17 @@ const badge = StyleSheet.create({
   text: { fontSize: FontSize.xs, fontWeight: FontWeight.semibold },
 });
 
+// ─── Hebrew date tile (instead of an emoji) ───────────────
+
+function DateTile({ event, color }: { event: ResolvedEvent; color: string }) {
+  return (
+    <View style={[styles.dateTile, { borderColor: color + '55' }]}>
+      <Text style={[styles.dateTileDay, { color }]}>{hebrewDayToGematria(event.hebrewDay)}</Text>
+      <Text style={styles.dateTileMonth}>{eventMonthLabel(event)}</Text>
+    </View>
+  );
+}
+
 // ─── Event Card ────────────────────────────────────────────
 
 function EventCard({ event }: { event: ResolvedEvent }) {
@@ -107,9 +118,7 @@ function EventCard({ event }: { event: ResolvedEvent }) {
       event.daysUntil <= 7 && !event.isToday && styles.eventCardSoon,
     ]}>
       <View style={[styles.accentBar, { backgroundColor: typeColor }]} />
-      <View style={styles.eventIcon}>
-        <Text style={styles.eventIconText}>{event.icon}</Text>
-      </View>
+      <DateTile event={event} color={typeColor} />
       <View style={styles.eventBody}>
         <View style={styles.eventTitleRow}>
           <Text style={styles.eventTitle}>{event.title}</Text>
@@ -164,9 +173,6 @@ export default function CalendarScreen() {
 
         {/* Today Hebrew Date Hero */}
         <View style={styles.heroCard}>
-          <View style={styles.heroStarRow}>
-            <Text style={styles.heroStar}>✡</Text>
-          </View>
           <Text style={styles.heroTitle}>{t('today_heb_title')}</Text>
           <Text style={styles.heroDate}>{display}</Text>
           <Text style={styles.heroGreg}>
@@ -182,7 +188,7 @@ export default function CalendarScreen() {
               <Text style={styles.nextTitle}>{t('upcoming_event')}</Text>
             </View>
             <View style={styles.nextBody}>
-              <Text style={styles.nextIcon}>{nextEvent.icon}</Text>
+              <DateTile event={nextEvent} color={TYPE_COLORS[nextEvent.type]} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.nextEventTitle}>{nextEvent.title}</Text>
                 {nextEvent.subtitle ? <Text style={styles.nextEventSub}>{nextEvent.subtitle}</Text> : null}
@@ -251,8 +257,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.lg,
     alignItems: 'center', marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.border, gap: Spacing.xs,
   },
-  heroStarRow: { marginBottom: Spacing.xs },
-  heroStar: { fontSize: 28, color: Colors.primary },
   heroTitle: { fontSize: FontSize.sm, color: Colors.textSecondary },
   heroDate: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, color: Colors.primary, textAlign: 'center' },
   heroGreg: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: 'center' },
@@ -264,7 +268,6 @@ const styles = StyleSheet.create({
   nextHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, justifyContent: 'flex-end' },
   nextTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.primary },
   nextBody: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  nextIcon: { fontSize: 28 },
   nextEventTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right' },
   nextEventSub: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'right' },
   nextDate: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: 'right', marginTop: 2 },
@@ -297,11 +300,12 @@ const styles = StyleSheet.create({
   eventCardToday: { borderColor: Colors.primary, borderWidth: 1.5, backgroundColor: 'rgba(245,166,35,0.05)' },
   eventCardSoon: { borderColor: 'rgba(245,166,35,0.4)' },
   accentBar: { width: 4, alignSelf: 'stretch', borderTopLeftRadius: Radius.lg, borderBottomLeftRadius: Radius.lg },
-  eventIcon: {
-    width: 40, height: 40, borderRadius: Radius.md,
+  dateTile: {
+    width: 52, paddingVertical: 6, borderRadius: Radius.md, borderWidth: 1,
     backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center',
   },
-  eventIconText: { fontSize: 22 },
+  dateTileDay: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  dateTileMonth: { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
   eventBody: { flex: 1, gap: 4 },
   eventTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   eventTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right', flex: 1 },

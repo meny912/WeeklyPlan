@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -22,7 +21,9 @@ import {
   fetchChumashWithRashiForDay,
   fetchRambamForDay,
   fetchHayomYomForDay,
+  TextSection,
 } from '@/services/sefariaService';
+import { fetchShnayimMikra, HEB_NUM } from '@/services/shnayimMikraService';
 import { getElulTehillim, getPersonalTehillim, savePersonalTehillim } from '@/services/tehillimExtras';
 import { getChapterVerses, getChapterVersesRange, chapterGematria, TEHILLIM_ATTRIBUTION } from '@/constants/tehillim/tehillimText';
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
@@ -43,10 +44,20 @@ const GREEN = '#1B7A3D';
 const HAIRLINE = '#E5E5E5';
 
 // ─── Verse Component ──────────────────────────────────────
-function VerseRow({ verse, text, fontSize }: { verse: number; text: string; fontSize: number }) {
+function VerseRow({ verse, text, fontSize, kind }: { verse: number; text: string; fontSize: number; kind?: TextSection['kind'] }) {
+  if (kind === 'mikra2' || kind === 'targum') {
+    const isTargum = kind === 'targum';
+    const size = isTargum ? fontSize - 2 : fontSize;
+    return (
+      <View style={[verseStyles.row, verseStyles.rowTight, isTargum && verseStyles.rowTargum]}>
+        <Text style={verseStyles.tag}>{isTargum ? 'ת״א' : ''}</Text>
+        <Text style={[verseStyles.text, isTargum && verseStyles.targumText, { fontSize: size, lineHeight: size * 1.75 }]}>{text}</Text>
+      </View>
+    );
+  }
   return (
-    <View style={verseStyles.row}>
-      <Text style={verseStyles.num}>{verse}</Text>
+    <View style={[verseStyles.row, kind === 'mikra' && verseStyles.rowTight]}>
+      <Text style={verseStyles.num}>{kind === 'mikra' ? HEB_NUM(verse) : verse}</Text>
       <Text style={[verseStyles.text, { fontSize, lineHeight: fontSize * 1.75 }]}>{text}</Text>
     </View>
   );
@@ -58,6 +69,16 @@ const verseStyles = StyleSheet.create({
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
+  rowTight: { marginBottom: 2 },
+  rowTargum: { marginBottom: Spacing.lg },
+  tag: {
+    fontSize: 11,
+    color: RUBRIC,
+    minWidth: 24,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  targumText: { color: '#4A4A4A' },
   num: {
     fontSize: FontSize.xs,
     color: GREEN,
@@ -86,7 +107,7 @@ function BookSection({ content, accentColor, fontSize }: { content: BookContent;
         ) : null}
       </View>
       {content.sections.map((s, i) => (
-        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} />
+        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} />
       ))}
     </View>
   );
@@ -244,6 +265,13 @@ export default function ReaderScreen() {
           result = await fetchRambamForDay(today);
           break;
         }
+        case 'shnayim': {
+          const sm = await fetchShnayimMikra(today);
+          result = sm.sections.map((c, i) =>
+            i === 0 ? { ...c, titleHe: `${sm.parshaHe} · ${c.titleHe}` } : c,
+          );
+          break;
+        }
         case 'hayomyom': {
           const c = await fetchHayomYomForDay(today);
           result = [c];
@@ -292,7 +320,10 @@ export default function ReaderScreen() {
     loadContent();
   };
 
-  const totalVerses = contents.reduce((sum, c) => sum + c.sections.length, 0);
+  const totalVerses = contents.reduce(
+    (sum, c) => sum + c.sections.filter(s => s.kind !== 'mikra2' && s.kind !== 'targum').length,
+    0,
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -304,7 +335,7 @@ export default function ReaderScreen() {
 
         <View style={styles.headerCenter}>
           <View style={[styles.iconCircle, { backgroundColor: config.color + '25' }]}>
-            <Text style={styles.headerIcon}>{config.icon}</Text>
+            <Text style={[styles.headerIcon, { color: config.color }]}>{config.icon}</Text>
           </View>
           <View>
             <Text style={styles.headerTitle}>{config.title}</Text>
@@ -388,7 +419,7 @@ export default function ReaderScreen() {
         </View>
       ) : error ? (
         <View style={styles.centerBox}>
-          <Text style={styles.errorIcon}>📡</Text>
+          <MaterialIcons name="wifi-off" size={44} color={RUBRIC} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={[styles.retryBtn, { backgroundColor: config.color }]} onPress={loadContent}>
             <Text style={styles.retryText}>נסה שנית</Text>
@@ -402,7 +433,7 @@ export default function ReaderScreen() {
         </View>
       ) : contents.length === 0 ? (
         <View style={styles.centerBox}>
-          <Text style={styles.errorIcon}>📭</Text>
+          <MaterialIcons name="inbox" size={44} color={RUBRIC} />
           <Text style={styles.errorText}>לא נמצא תוכן להיום</Text>
           <Pressable style={[styles.retryBtn, { backgroundColor: config.color }]} onPress={forceRefresh}>
             <Text style={styles.retryText}>נקה מטמון ורענן</Text>
@@ -545,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcon: { fontSize: 22 },
+  headerIcon: { fontSize: 18, fontWeight: FontWeight.bold },
   headerTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,

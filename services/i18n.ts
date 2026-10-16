@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 // Global i18n service – Hebrew, English, German
 // All UI strings are defined here. Use useTranslation() from SettingsContext
 // in any component to get a reactive t() function that re-renders on language change.
@@ -67,12 +66,12 @@ const translations = {
     // ── Summary screen ───────────────────────────────────────────────────────
     summary_title: 'סיכום שבועי',
     summary_subtitle: 'מעקב ביצועים שבועי',
-    this_week_tab: '📊 השבוע',
-    history_tab_btn: '📅 היסטוריה',
+    this_week_tab: 'השבוע',
+    history_tab_btn: 'היסטוריה',
     stat_done: 'הושלמו',
     stat_left: 'נותרו',
     stat_total: 'סה״כ',
-    perfect_week: '🏆 שבוע מושלם!',
+    perfect_week: 'שבוע מושלם!',
     section_done: 'הושלמו',
     section_pending: 'טרם הושלמו',
     no_tasks_this_week: 'אין משימות לשבוע זה',
@@ -83,10 +82,10 @@ const translations = {
     no_history_desc: 'לאחר תום השבוע הנוכחי, הנתונים ייארכו כאן אוטומטית',
     show_task_list: 'הצג רשימת משימות ▼',
     hide_task_list: 'הסתר רשימת משימות ▲',
-    day_completed_label: '✅ הושלמו',
-    day_missed_label: '❌ הוחמצו',
-    completed_tasks_his: '✅ הושלמו',
-    missed_tasks_his: '❌ הוחמצו',
+    day_completed_label: 'הושלמו',
+    day_missed_label: 'הוחמצו',
+    completed_tasks_his: 'הושלמו',
+    missed_tasks_his: 'הוחמצו',
     tasks_count_label: 'משימות',
 
     // ── Chassidic Calendar ───────────────────────────────────────────────────
@@ -122,7 +121,9 @@ const translations = {
     cat_tehillim_sub: 'פרקים יומיים לפי לוח החודש',
     cat_tehillim_desc: 'ספר תהלים – דוד המלך',
     cat_chumash_sub: 'פרשת השבוע – עליה יומית',
-    cat_chumash_desc: 'חיתת – חומש יומי עם רש״י',
+    cat_chumash_desc: 'חת״ת – חומש יומי עם רש״י',
+    cat_shnayim_sub: 'פרשת השבוע עם תרגום אונקלוס',
+    cat_shnayim_desc: 'מקרא, מקרא ותרגום · הפטרה כמנהג חב״ד',
     cat_tanya_sub: 'שיעור יומי בתניא',
     cat_tanya_desc: 'ספר של בינוניים – אדמו״ר הזקן',
     cat_rambam_sub: '3 פרקים יומיים',
@@ -175,7 +176,7 @@ const translations = {
     day_sat: 'שבת',
 
     // ── Notifications ─────────────────────────────────────────────────────────
-    notif_title: '📗 שיעור יומי',
+    notif_title: 'שיעור יומי',
     notif_body: 'הגיע הזמן ללמוד את השיעור היומי!',
     notif_permission_denied: 'נדרשת הרשאה להתראות',
     notif_scheduled: 'תזכורת נקבעה',
@@ -233,12 +234,12 @@ const translations = {
     // ── Summary ───────────────────────────────────────────────────────────────
     summary_title: 'Weekly Summary',
     summary_subtitle: 'Weekly Performance Tracking',
-    this_week_tab: '📊 This Week',
-    history_tab_btn: '📅 History',
+    this_week_tab: 'This Week',
+    history_tab_btn: 'History',
     stat_done: 'Done',
     stat_left: 'Left',
     stat_total: 'Total',
-    perfect_week: '🏆 Perfect week!',
+    perfect_week: 'Perfect week!',
     section_done: 'Completed',
     section_pending: 'Not yet done',
     no_tasks_this_week: 'No tasks this week',
@@ -249,10 +250,10 @@ const translations = {
     no_history_desc: 'After the current week ends, data will be archived here automatically',
     show_task_list: 'Show task list ▼',
     hide_task_list: 'Hide task list ▲',
-    day_completed_label: '✅ Completed',
-    day_missed_label: '❌ Missed',
-    completed_tasks_his: '✅ Completed',
-    missed_tasks_his: '❌ Missed',
+    day_completed_label: 'Completed',
+    day_missed_label: 'Missed',
+    completed_tasks_his: 'Completed',
+    missed_tasks_his: 'Missed',
     tasks_count_label: 'tasks',
 
     // ── Calendar ──────────────────────────────────────────────────────────────
@@ -288,6 +289,8 @@ const translations = {
     cat_tehillim_desc: 'Book of Psalms – King David',
     cat_chumash_sub: 'Weekly portion – daily aliya',
     cat_chumash_desc: 'Chitas – Daily Chumash with Rashi',
+    cat_shnayim_sub: 'Weekly portion with Targum Onkelos',
+    cat_shnayim_desc: 'Twice the verse, once Targum · Chabad haftarah',
     cat_tanya_sub: 'Daily Tanya portion',
     cat_tanya_desc: 'Book of the Intermediates – the Alter Rebbe',
     cat_rambam_sub: '3 daily chapters',
@@ -338,7 +341,7 @@ const translations = {
     day_fri: 'Fri',
     day_sat: 'Sat',
 
-    notif_title: '📗 Daily Study',
+    notif_title: 'Daily Study',
     notif_body: "Time for today's daily study portion!",
     notif_permission_denied: 'Notification permission required',
     notif_scheduled: 'Reminder scheduled',
@@ -396,12 +399,12 @@ const translations = {
     // ── Summary ───────────────────────────────────────────────────────────────
     summary_title: 'Wochenzusammenfassung',
     summary_subtitle: 'Wöchentliche Leistungsübersicht',
-    this_week_tab: '📊 Diese Woche',
-    history_tab_btn: '📅 Verlauf',
+    this_week_tab: 'Diese Woche',
+    history_tab_btn: 'Verlauf',
     stat_done: 'Erledigt',
     stat_left: 'Übrig',
     stat_total: 'Gesamt',
-    perfect_week: '🏆 Perfekte Woche!',
+    perfect_week: 'Perfekte Woche!',
     section_done: 'Erledigt',
     section_pending: 'Ausstehend',
     no_tasks_this_week: 'Keine Aufgaben diese Woche',
@@ -412,10 +415,10 @@ const translations = {
     no_history_desc: 'Nach Ende der aktuellen Woche werden Daten hier automatisch archiviert',
     show_task_list: 'Aufgabenliste anzeigen ▼',
     hide_task_list: 'Aufgabenliste ausblenden ▲',
-    day_completed_label: '✅ Erledigt',
-    day_missed_label: '❌ Verpasst',
-    completed_tasks_his: '✅ Erledigt',
-    missed_tasks_his: '❌ Verpasst',
+    day_completed_label: 'Erledigt',
+    day_missed_label: 'Verpasst',
+    completed_tasks_his: 'Erledigt',
+    missed_tasks_his: 'Verpasst',
     tasks_count_label: 'Aufgaben',
 
     // ── Calendar ──────────────────────────────────────────────────────────────
@@ -451,6 +454,8 @@ const translations = {
     cat_tehillim_desc: 'Psalmen – König David',
     cat_chumash_sub: 'Wöchentlicher Abschnitt – tägliche Alija',
     cat_chumash_desc: 'Chitas – Täglicher Chumash mit Raschi',
+    cat_shnayim_sub: 'Wochenabschnitt mit Targum Onkelos',
+    cat_shnayim_desc: 'Zweimal der Vers, einmal Targum · Haftara nach Chabad',
     cat_tanya_sub: 'Täglicher Tanja-Abschnitt',
     cat_tanya_desc: 'Buch der Mittelmäßigen – der Alter Rebbe',
     cat_rambam_sub: '3 tägliche Kapitel',
@@ -501,7 +506,7 @@ const translations = {
     day_fri: 'Fr',
     day_sat: 'Sa',
 
-    notif_title: '📗 Tägliches Lernen',
+    notif_title: 'Tägliches Lernen',
     notif_body: 'Zeit für den täglichen Lernabschnitt!',
     notif_permission_denied: 'Benachrichtigungsberechtigung erforderlich',
     notif_scheduled: 'Erinnerung geplant',
