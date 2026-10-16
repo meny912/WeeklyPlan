@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 // Turns a flat list of siddur blocks into render items, folding passages that
 // are NOT part of the everyday solo (b'yachid) prayer into collapsible groups
 // (Kaddish, Ya'aleh Veyavo, Al HaNisim, Kedusha, Barchu, Aseret Yemei Teshuva
@@ -62,7 +61,7 @@ const INLINE_GROUPS: InlineGroup[] = [
   { id: 'yaaleh-veyavo', title: 'יעלה ויבוא', start: ['בראש חדש ובחול המועד מוסיפים', 'אלהינו ואלהי אבותינו יעלה ויב', 'יעלה ויבא'], end: ['ואתה ברחמיך', 'ותחזינה עינינו'] },
   // Al HaNisim runs from "ועל הנסים" through בימי מתתיהו (Chanukah) and בימי מרדכי
   // (Purim) up to "ועל כולם" — a long span in the Chabad text, hence span: 18.
-  { id: 'al-hanisim', title: 'על הניסים', start: ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן', 'ועל הנסים'], end: ['ועל כלם', 'ועל כולם', 'וכל החיים יודוך'], span: 18 },
+  { id: 'al-hanisim', title: 'על הניסים', start: ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן'], end: ['ועל כלם', 'ועל כולם', 'וכל החיים יודוך'], span: 18 },
   { id: 'birkat-kohanim', title: 'ברכת כהנים', start: ['אלהינו ואלהי אבותינו ברכנו בברכה המשלשת', 'ברכנו בברכה המשלשת בתורה'], end: ['שים שלום', 'שלום רב'] },
   { id: 'nachem', title: 'נחם (ט"ב)', start: ['נחם יי אלהינו את אבלי ציון', 'נחם יי אלהינו', 'במנחת תשעה באב נחם', 'בתשעה באב מוסיפים נחם', 'תשעה באב מוסיפים נחם'], end: ['בונה ירושלים', 'מנחם ציון'] },
   { id: 'aneinu', title: 'עננו (תענית)', start: ['עננו אבינו עננו', 'עננו יי עננו', 'עננו יי אלהינו', 'עננו ביום צום', 'עננו בורא עולם', 'ענינו בורא עולם'], end: ['כי אתה שומע', 'העונה בעת צרה', 'רפאנו יי'] },
@@ -106,12 +105,73 @@ function matchInlineStart(t: string): InlineGroup | null {
   return null;
 }
 
+const AL_HANISIM_OPEN = ['ועל הנסים ועל הפרקן', 'על הנסים ועל הפרקן'];
+
+function splitAlHanisim(blocks: SBlock[], i: number): { items: RenderItem[]; next: number } | null {
+  // "על הניסים" heading and/or a short rubric line may come before the opening.
+  const lead: RenderItem[] = [];
+  while (i < blocks.length && lead.length < 2) {
+    const n = norm(blocks[i].t);
+    const isRubric = blocks[i].k === 'h' || (blocks[i].k === 'i' && !includesAny(n, ['בימי מתתיה', 'בימי מרדכי']));
+    if (!isRubric || includesAny(n, AL_HANISIM_OPEN)) break;
+    if (!includesAny(n, ['על הנסים', 'על הניסים'])) return null;
+    if (blocks[i].k !== 'h') lead.push({ kind: 'block', block: blocks[i] }); // keep the instruction visible
+    i++;
+  }
+  if (i >= blocks.length) return null;
+  const open = blocks[i];
+  if (open.k === 'h' || !includesAny(norm(open.t), AL_HANISIM_OPEN)) return null;
+  // The opening block must not itself already contain a whole paragraph.
+  if (includesAny(norm(open.t), ['בימי מתתיה', 'בימי מרדכי'])) return null;
+  let chanukah = -1;
+  let purim = -1;
+  for (let j = i + 1; j < blocks.length && j <= i + 4; j++) {
+    if (blocks[j].k === 'h') break;
+    const n = norm(blocks[j].t);
+    if (chanukah < 0 && includesAny(n, ['בימי מתתיה'])) chanukah = j;
+    else if (purim < 0 && includesAny(n, ['בימי מרדכי'])) purim = j;
+  }
+  // Only split the clean, expected shape: opening → Chanukah → Purim, back to back.
+  if (chanukah !== i + 1 || purim !== i + 2) return null;
+  // Some texts mark the paragraphs as instructions ("(בחנוכה אומרים:) בימי…");
+  // inside the box they are prayer text, so render them as such.
+  const asText = (blk: SBlock): SBlock => (blk.k === 'i' ? { k: 't', t: blk.t } : blk);
+  return {
+    items: [
+      ...lead,
+      { kind: 'group', id: `al-hanisim-chanukah-${i}`, title: 'על הניסים לחנוכה', blocks: [open, asText(blocks[chanukah])] },
+      { kind: 'group', id: `al-hanisim-purim-${i}`, title: 'על הניסים לפורים', blocks: [open, asText(blocks[purim])] },
+    ],
+    next: purim + 1,
+  };
+}
+
+// Before Birkat HaMazon (Chabad): "ביום שאין אומרים בו תחנון:" + שיר המעלות בשוב.
+function shirHamaalot(blocks: SBlock[], i: number): { items: RenderItem[]; next: number } | null {
+  const b = blocks[i];
+  const nb = blocks[i + 1];
+  if (!nb || b.k === 'h' || nb.k === 'h') return null;
+  if (!includesAny(norm(b.t), ['ביום שאין אומרים בו תחנון'])) return null;
+  if (!includesAny(norm(nb.t), ['שיר המעלות בשוב'])) return null;
+  return {
+    items: [{ kind: 'group', id: `shir-hamaalot-${i}`, title: 'שיר המעלות – ביום שאין אומרים תחנון', blocks: [b, nb] }],
+    next: i + 2,
+  };
+}
+
 export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
   const items: RenderItem[] = [];
   let i = 0;
   const N = blocks.length;
   while (i < N) {
     const b = blocks[i];
+
+    const special = splitAlHanisim(blocks, i) ?? shirHamaalot(blocks, i);
+    if (special) {
+      items.push(...special.items);
+      i = special.next;
+      continue;
+    }
 
     if (b.k === 'h') {
       const hn = norm(b.t);
