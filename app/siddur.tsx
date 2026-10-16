@@ -15,6 +15,7 @@ import { SEPHARDI_SIDDUR, getSephardiCategory, type SiddurBlock } from '@/consta
 import { fetchCategory } from '@/services/chabadSiddurService';
 import { getLuachContext } from '@/services/luachContext';
 import { buildRenderItems } from '@/constants/siddur/collapsible';
+import { MOURNER_BLOCKS, MOURNER_TITLE } from '@/constants/siddur/mourner';
 
 // Reading surface: white paper, black ink, green for the collapsible headers
 // (passages not said in everyday solo prayer). Independent of the app theme.
@@ -170,7 +171,15 @@ function CategoryReader({
     };
   }, [nusach, category]);
 
-  const items = useMemo(() => (blocks ? buildRenderItems(blocks) : []), [blocks]);
+  const items = useMemo(() => {
+    if (!blocks) return [];
+    const list = buildRenderItems(blocks);
+    // Chabad siddur only: the mourner's Mishnayot at the end of each daily prayer.
+    if (nusach !== 'sephardi' && ['shacharit', 'mincha', 'maariv'].includes(category.id)) {
+      list.push({ kind: 'group', id: 'mourner', title: MOURNER_TITLE, blocks: MOURNER_BLOCKS });
+    }
+    return list;
+  }, [blocks, nusach, category.id]);
 
   const renderBlock = (b: SiddurBlock, key: React.Key) => {
     if (b.k === 'h') {
