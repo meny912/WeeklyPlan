@@ -1,4 +1,3 @@
-// Powered by OnSpace.AI
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Task {
@@ -72,6 +71,11 @@ const LAST_CHECK_KEY   = 'weekly_plan_last_reset_check';
  * Weeks start on SUNDAY for this app (not ISO Monday).
  * We use a custom Sunday-based week number derived from year start.
  */
+function isoLocal(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 export function getWeekKey(date: Date = new Date()): string {
   // Get the Sunday that starts the week containing `date`
   const sunday = getSundayOfWeek(date);
@@ -203,8 +207,8 @@ export async function archiveWeekRich(
 
     const entry: WeekHistoryEntry = {
       weekKey: record.weekKey,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate:   endDate.toISOString().split('T')[0],
+      startDate: isoLocal(startDate),
+      endDate:   isoLocal(endDate),
       completionPercent: percent,
       completedTasks: completedAll,
       missedTasks:    missedAll,
@@ -253,10 +257,15 @@ function getSundayOfWeekFromKey(weekKey: string): Date {
   if (!match) return new Date();
   const year   = parseInt(match[1], 10);
   const weekNo = parseInt(match[2], 10);
-  // Jan 1 + (weekNo-1)*7 days, then back to Sunday
-  const jan1   = new Date(year, 0, 1);
-  const d      = new Date(jan1.getTime() + (weekNo - 1) * 7 * 86400000);
-  // Snap to Sunday
+  // Exact inverse of getWeekKey: the week's Sunday lies within a few days of
+  // Jan 1 + (weekNo-1)*7. Snapping *back* to Sunday landed a week early whenever
+  // Jan 1 was not a Sunday, so search for the Sunday that maps to this key.
+  const approx = new Date(year, 0, 1 + (weekNo - 1) * 7);
+  for (let off = -7; off <= 7; off++) {
+    const d = new Date(approx.getFullYear(), approx.getMonth(), approx.getDate() + off);
+    if (d.getDay() === 0 && getWeekKey(d) === weekKey) return d;
+  }
+  const d = new Date(approx);
   d.setDate(d.getDate() - d.getDay());
   return d;
 }
