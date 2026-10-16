@@ -51,7 +51,6 @@ interface InlineGroup {
 
 // Order matters — the first matching start wins and consumes its range.
 const INLINE_GROUPS: InlineGroup[] = [
-  { id: 'chatzi-kaddish', title: 'חצי קדיש', start: ['אומר החזן חצי קדיש', 'אומר החזן קדיש'], end: ['ברכו את', 'קש וברכותיה', 'יוצר אור', 'המעריב ערבים'] },
   { id: 'barchu', title: 'ברכו', start: ['ברכו את יהוה המברך', 'ברכו את יהוה'], end: ['יוצר אור', 'המעריב ערבים', 'קש וברכותיה'] },
   { id: 'kaddish', title: 'קדיש', start: ['יתגדל ויתקדש שמה רבא'], single: true },
   { id: 'ata-chonantanu', title: 'אתה חוננתנו (מוצ"ש)', start: ['במוצאי שבת ויום טוב מוסיפים אתה חוננתנו', 'במוצאי שבת ויום טוב אומרים', 'אתה חוננתנו יי אלהינו', 'אתה חוננתנו למדע', 'אתה חוננתנו'], end: ['חננו מאתך', 'חכמה בינה ודעת מאתך', 'אתה חונן לאדם דעת'] },
@@ -153,10 +152,47 @@ function shirHamaalot(blocks: SBlock[], i: number): { items: RenderItem[]; next:
   if (!nb || b.k === 'h' || nb.k === 'h') return null;
   if (!includesAny(norm(b.t), ['ביום שאין אומרים בו תחנון'])) return null;
   if (!includesAny(norm(nb.t), ['שיר המעלות בשוב'])) return null;
+  const box = [b, nb];
+  const korach = blocks[i + 2];
+  if (korach && korach.k !== 'h' && includesAny(norm(korach.t), ['לבני קרח מזמור שיר'])) box.push(korach);
   return {
-    items: [{ kind: 'group', id: `shir-hamaalot-${i}`, title: 'שיר המעלות – ביום שאין אומרים תחנון', blocks: [b, nb] }],
-    next: i + 2,
+    items: [{ kind: 'group', id: `shir-hamaalot-${i}`, title: 'שיר המעלות – ביום שאין אומרים תחנון', blocks: box }],
+    next: i + box.length,
   };
+}
+
+// Kaddish: keep every line of it in one box, from "יתגדל" through "עושה שלום".
+const KADDISH_LINES = [
+  'יתגדל ויתקדש', 'יהא שמה רבא', 'יתברך וישתבח', 'לעלא מן כל', 'דאמירן בעלמא',
+  'תתקבל', 'יהא שלמא רבא', 'עשה שלום', 'עושה שלום', 'על ישראל ועל רבנן',
+];
+function kaddishBox(blocks: SBlock[], i: number): { items: RenderItem[]; next: number } | null {
+  let start = i;
+  // A short rubric right before it ("אומר החזן קדיש…") goes into the same box.
+  const r = blocks[i];
+  if (r.k === 'i' && norm(r.t).length < 120 && includesAny(norm(r.t), ['קדיש']) && blocks[i + 1]
+      && includesAny(norm(blocks[i + 1].t), ['יתגדל ויתקדש שמה רבא'])) {
+    i += 1;
+  }
+  const b = blocks[i];
+  if (b.k === 'h' || !includesAny(norm(b.t), ['יתגדל ויתקדש שמה רבא'])) return null;
+  let last = i;
+  for (let j = i + 1; j < blocks.length && j <= i + 10; j++) {
+    const nb = blocks[j];
+    if (nb.k === 'h') break;
+    const n = norm(nb.t);
+    if (nb.k === 'i' && n.length < 80) continue;      // short rubric inside the Kaddish
+    if (!includesAny(n, KADDISH_LINES)) break;
+    last = j;
+    if (includesAny(n, ['עשה שלום', 'עושה שלום'])) break; // the Kaddish's last line
+  }
+  const box = blocks.slice(start, last + 1);
+  const has = (needle: string) => box.some((x) => includesAny(norm(x.t), [needle]));
+  const title = has('על ישראל ועל רבנן') ? 'קדיש דרבנן'
+    : has('תתקבל') ? 'קדיש תתקבל'
+    : has('יהא שלמא רבא') ? 'קדיש יתום'
+    : 'חצי קדיש';
+  return { items: [{ kind: 'group', id: `kaddish-${start}`, title, blocks: box }], next: last + 1 };
 }
 
 export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
@@ -166,7 +202,7 @@ export function buildRenderItems(blocks: SBlock[]): RenderItem[] {
   while (i < N) {
     const b = blocks[i];
 
-    const special = splitAlHanisim(blocks, i) ?? shirHamaalot(blocks, i);
+    const special = splitAlHanisim(blocks, i) ?? shirHamaalot(blocks, i) ?? kaddishBox(blocks, i);
     if (special) {
       items.push(...special.items);
       i = special.next;
