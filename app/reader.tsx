@@ -24,6 +24,7 @@ import {
   TextSection,
 } from '@/services/sefariaService';
 import { fetchShnayimMikra, HEB_NUM } from '@/services/shnayimMikraService';
+import { fetchChumashGerman } from '@/services/germanService';
 import { getElulTehillim, getPersonalTehillim, savePersonalTehillim } from '@/services/tehillimExtras';
 import { getChapterVerses, getChapterVersesRange, chapterGematria, TEHILLIM_ATTRIBUTION } from '@/constants/tehillim/tehillimText';
 import { getDailyTehillim } from '@/constants/tehillim/tehillimSchedule';
@@ -44,13 +45,14 @@ const GREEN = '#1B7A3D';
 const HAIRLINE = '#E5E5E5';
 
 // ─── Verse Component ──────────────────────────────────────
-function VerseRow({ verse, text, fontSize, kind, lead }: { verse: number; text: string; fontSize: number; kind?: TextSection['kind']; lead?: string }) {
+function VerseRow({ verse, text, fontSize, kind, lead, ltr }: { verse: number; text: string; fontSize: number; kind?: TextSection['kind']; lead?: string; ltr?: boolean }) {
+  const dir = ltr ? verseStyles.ltr : null;
   if (kind === 'rashi') {
     const size = fontSize - 3;
     return (
       <View style={[verseStyles.row, verseStyles.rowRashi]}>
-        <Text style={verseStyles.tag}>רש״י</Text>
-        <Text style={[verseStyles.text, verseStyles.rashiText, { fontSize: size, lineHeight: size * 1.7 }]}>
+        <Text style={verseStyles.tag}>{ltr ? 'Raschi' : 'רש״י'}</Text>
+        <Text style={[verseStyles.text, verseStyles.rashiText, dir, { fontSize: size, lineHeight: size * 1.7 }]}>
           {lead ? <Text style={verseStyles.rashiLead}>{lead} </Text> : null}
           {text}
         </Text>
@@ -69,8 +71,8 @@ function VerseRow({ verse, text, fontSize, kind, lead }: { verse: number; text: 
   }
   return (
     <View style={[verseStyles.row, kind === 'mikra' && verseStyles.rowTight]}>
-      <Text style={verseStyles.num}>{kind === 'mikra' ? HEB_NUM(verse) : verse}</Text>
-      <Text style={[verseStyles.text, { fontSize, lineHeight: fontSize * 1.75 }]}>{text}</Text>
+      <Text style={verseStyles.num}>{kind === 'mikra' && !ltr ? HEB_NUM(verse) : verse}</Text>
+      <Text style={[verseStyles.text, dir, { fontSize, lineHeight: fontSize * 1.75 }]}>{text}</Text>
     </View>
   );
 }
@@ -91,6 +93,7 @@ const verseStyles = StyleSheet.create({
     textAlign: 'center',
   },
   targumText: { color: '#4A4A4A' },
+  ltr: { textAlign: 'left', writingDirection: 'ltr' },
   rowRashi: { marginBottom: 6, paddingRight: Spacing.sm },
   rashiText: { color: '#3A3A3A' },
   rashiLead: { fontWeight: FontWeight.bold, color: INK },
@@ -112,17 +115,18 @@ const verseStyles = StyleSheet.create({
 
 // ─── Book Section ─────────────────────────────────────────
 function BookSection({ content, accentColor, fontSize }: { content: BookContent; accentColor: string; fontSize: number }) {
-  const hebrewRef = content.ref && /^[\u05d0-\u05ea]/.test(content.ref) ? content.ref : null;
+  const ltr = content.lang === 'de';
+  const hebrewRef = content.ref && (ltr || /^[\u05d0-\u05ea]/.test(content.ref)) ? content.ref : null;
   return (
     <View style={secStyles.container}>
       <View style={[secStyles.header, { borderLeftColor: GREEN }]}>
-        <Text style={[secStyles.title, { color: INK }]}>{content.titleHe || content.title}</Text>
+        <Text style={[secStyles.title, { color: INK }, ltr && { textAlign: 'left' }]}>{content.titleHe || content.title}</Text>
         {hebrewRef ? (
-          <Text style={secStyles.ref}>{hebrewRef}</Text>
+          <Text style={[secStyles.ref, ltr && { textAlign: 'left' }]}>{hebrewRef}</Text>
         ) : null}
       </View>
       {content.sections.map((s, i) => (
-        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} lead={s.lead} />
+        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} lead={s.lead} ltr={content.lang === 'de'} />
       ))}
     </View>
   );
@@ -280,6 +284,10 @@ export default function ReaderScreen() {
           result = await fetchRambamForDay(today);
           break;
         }
+        case 'chumash_de': {
+          result = await fetchChumashGerman(today);
+          break;
+        }
         case 'shnayim': {
           const sm = await fetchShnayimMikra(today);
           result = sm.sections.map((c, i) =>
@@ -389,7 +397,7 @@ export default function ReaderScreen() {
         <View style={styles.metaBar}>
           <Text style={styles.metaText}>{config.description}</Text>
           <View style={styles.metaRight}>
-            <Text style={styles.metaCount}>{totalVerses} פסוקים</Text>
+            <Text style={styles.metaCount}>{totalVerses} {type.endsWith('_de') ? 'Verse' : 'פסוקים'}</Text>
             <FontSizeControl
               size={fontSize}
               onIncrease={() => setFontSize(s => Math.min(s + 2, 30))}
@@ -473,7 +481,7 @@ export default function ReaderScreen() {
           <View style={styles.sourceNote}>
             <MaterialIcons name="info-outline" size={14} color={RUBRIC} />
             <Text style={styles.sourceText}>
-              {type === 'tehillim' ? TEHILLIM_ATTRIBUTION : 'מקור: Sefaria · ספרייה יהודית פתוחה'}
+              {type === 'tehillim' ? TEHILLIM_ATTRIBUTION : type.endsWith('_de') ? 'Quelle: Sefaria (gemeinfreie Übersetzungen)' : 'מקור: Sefaria · ספרייה יהודית פתוחה'}
             </Text>
           </View>
 

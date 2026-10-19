@@ -17,6 +17,8 @@ export interface TextSection {
 }
 
 export interface BookContent {
+  /** 'de' = German, shown left-to-right. */
+  lang?: 'de';
   title: string;
   titleHe: string;
   sections: TextSection[];
@@ -952,7 +954,7 @@ export async function fetchHayomYomForDay(date: Date = new Date()): Promise<Book
 }
 
 // ─── Exports ──────────────────────────────────────────────
-export type LearningType = 'tehillim' | 'tanya' | 'chumash' | 'rambam' | 'hayomyom' | 'shnayim';
+export type LearningType = 'tehillim' | 'tanya' | 'chumash' | 'rambam' | 'hayomyom' | 'shnayim' | 'chumash_de';
 
 export interface ReaderConfig {
   type: LearningType;
@@ -1003,6 +1005,14 @@ export const READER_CONFIGS: Record<LearningType, ReaderConfig> = {
     icon: 'ש',
     color: '#B8956A',
     description: 'פרשת השבוע · מקרא, מקרא ותרגום אונקלוס · הפטרה',
+  },
+  chumash_de: {
+    type: 'chumash_de',
+    title: 'Chumasch auf Deutsch',
+    titleHe: 'Chumasch',
+    icon: 'D',
+    color: '#C98A6B',
+    description: 'Wochenabschnitt – tägliche Alija (Übers. S. R. Hirsch)',
   },
   hayomyom: {
     type: 'hayomyom',

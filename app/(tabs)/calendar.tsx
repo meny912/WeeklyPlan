@@ -23,6 +23,7 @@ import {
 import { Colors, Spacing, Radius, FontSize, FontWeight, Fonts } from '@/constants/theme';
 import { useTranslation } from '@/contexts/SettingsContext';
 import type { TranslationKey } from '@/services/i18n';
+import { CHASSIDIC_FACTS } from '@/constants/chassidicFacts';
 
 const TYPE_COLORS: Record<EventType, string> = {
   hilula: '#9C8CC4',
@@ -110,31 +111,51 @@ function DateTile({ event, color }: { event: ResolvedEvent; color: string }) {
 function EventCard({ event }: { event: ResolvedEvent }) {
   const typeColor = TYPE_COLORS[event.type];
   const typeBg    = TYPE_BG[event.type];
+  const facts = CHASSIDIC_FACTS[event.id];
+  const [open, setOpen] = useState(false);
 
   return (
-    <View style={[
-      styles.eventCard,
-      event.isToday && styles.eventCardToday,
-      event.daysUntil <= 7 && !event.isToday && styles.eventCardSoon,
-    ]}>
-      <View style={[styles.accentBar, { backgroundColor: typeColor }]} />
-      <DateTile event={event} color={typeColor} />
-      <View style={styles.eventBody}>
-        <View style={styles.eventTitleRow}>
-          <Text style={styles.eventTitle}>{event.title}</Text>
-        </View>
-        {event.subtitle ? <Text style={styles.eventSubtitle}>{event.subtitle}</Text> : null}
-        <View style={styles.eventMeta}>
-          <View style={[styles.typePill, { backgroundColor: typeBg }]}>
-            <Text style={[styles.typePillText, { color: typeColor }]}>
-              {getEventTypeLabel(event.type)}
-            </Text>
+    <Pressable
+      onPress={facts ? () => setOpen(o => !o) : undefined}
+      style={[
+        styles.eventCardWrap,
+        event.isToday && styles.eventCardToday,
+        event.daysUntil <= 7 && !event.isToday && styles.eventCardSoon,
+      ]}
+    >
+      <View style={styles.eventCard}>
+        <View style={[styles.accentBar, { backgroundColor: typeColor }]} />
+        <DateTile event={event} color={typeColor} />
+        <View style={styles.eventBody}>
+          <View style={styles.eventTitleRow}>
+            <Text style={styles.eventTitle}>{event.title}</Text>
           </View>
-          <Text style={styles.gregDate}>{formatGregDate(event.gregDate)}</Text>
+          {event.subtitle ? <Text style={styles.eventSubtitle}>{event.subtitle}</Text> : null}
+          <View style={styles.eventMeta}>
+            {facts ? (
+              <MaterialIcons name={open ? 'expand-less' : 'expand-more'} size={18} color={Colors.textMuted} />
+            ) : null}
+            <View style={[styles.typePill, { backgroundColor: typeBg }]}>
+              <Text style={[styles.typePillText, { color: typeColor }]}>
+                {getEventTypeLabel(event.type)}
+              </Text>
+            </View>
+            <Text style={styles.gregDate}>{formatGregDate(event.gregDate)}</Text>
+          </View>
         </View>
+        <DaysUntilBadge days={event.daysUntil} />
       </View>
-      <DaysUntilBadge days={event.daysUntil} />
-    </View>
+      {open && facts ? (
+        <View style={[styles.facts, { borderTopColor: typeColor + '33' }]}>
+          {facts.map((f, i) => (
+            <View key={i} style={styles.factRow}>
+              <View style={[styles.factDot, { backgroundColor: typeColor }]} />
+              <Text style={styles.factText}>{f}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -292,11 +313,18 @@ const styles = StyleSheet.create({
     textAlign: 'right', marginBottom: Spacing.sm,
   },
 
-  eventCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface,
-    borderRadius: Radius.lg, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border,
-    overflow: 'hidden', gap: Spacing.sm, paddingRight: Spacing.md, paddingVertical: 14,
+  eventCardWrap: {
+    backgroundColor: Colors.surface, borderRadius: Radius.lg, marginBottom: Spacing.sm,
+    borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
   },
+  eventCard: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: Spacing.sm, paddingRight: Spacing.md, paddingVertical: 14,
+  },
+  facts: { borderTopWidth: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 8 },
+  factRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8 },
+  factDot: { width: 6, height: 6, borderRadius: 3, marginTop: 8 },
+  factText: { flex: 1, fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'right', lineHeight: 21 },
   eventCardToday: { borderColor: Colors.primary, borderWidth: 1.5, backgroundColor: 'rgba(201,165,92,0.05)' },
   eventCardSoon: { borderColor: 'rgba(201,165,92,0.4)' },
   accentBar: { width: 4, alignSelf: 'stretch', borderTopLeftRadius: Radius.lg, borderBottomLeftRadius: Radius.lg },

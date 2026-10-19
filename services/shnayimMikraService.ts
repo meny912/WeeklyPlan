@@ -71,14 +71,14 @@ export function upcomingShabbat(date: Date): Date {
   return d;
 }
 
-interface ParshaInfo {
+export interface ParshaInfo {
   name: string;        // Hebcal name, e.g. "Noach"
   nameHe: string;      // "פרשת נח"
   aliyot: string[];    // 7 Sefaria refs
   haftarah: string;    // Chabad haftarah ref(s)
 }
 
-async function fetchParsha(date: Date): Promise<ParshaInfo | null> {
+export async function fetchParsha(date: Date): Promise<ParshaInfo | null> {
   // Some Shabbatot (Yom Tov) have no parsha – look ahead up to three weeks.
   const start = upcomingShabbat(date);
   for (let week = 0; week < 3; week++) {

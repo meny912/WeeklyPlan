@@ -468,6 +468,32 @@ export default function TodayScreen() {
               />
             ))}
 
+            {/* Vienna shiurim (shiurfinder.at) */}
+            <SectionHeader title="שיעורים בווינה" subtitle="כל השיעורים בבתי הכנסת · shiurfinder.at" />
+            <CategoryCard
+              id="shiurim"
+              title="שיעורי תורה בווינה"
+              subtitle="היום ובכל ימי השבוע"
+              description="לפי יום, בית כנסת ושפה"
+              icon="ש"
+              color="#7FA3C2"
+              bgColor="#7FA3C215"
+              onPress={() => router.push('/shiurim' as any)}
+            />
+
+            {/* German learning */}
+            <SectionHeader title="לימוד בגרמנית" subtitle="Tägliches Lernen auf Deutsch" />
+            <CategoryCard
+              id="chumash_de"
+              title="Chumasch auf Deutsch"
+              subtitle="Tägliche Alija mit Raschi"
+              description="Übersetzung: S. R. Hirsch"
+              icon="D"
+              color="#C98A6B"
+              bgColor="#C98A6B15"
+              onPress={() => router.push({ pathname: '/reader', params: { type: 'chumash_de' } } as any)}
+            />
+
             <View style={styles.sefariaNote}>
               <MaterialIcons name="info-outline" size={13} color={Colors.textMuted} />
               <Text style={styles.sefariaText}>{t('sefaria_credit')}</Text>
