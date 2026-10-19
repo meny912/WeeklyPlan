@@ -7,8 +7,17 @@ import { WebView } from 'react-native-webview';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Fonts } from '@/constants/theme';
+import { getCurrentLanguage } from '@/services/i18n';
 
 const SITE = 'https://shiurfinder.at';
+
+// Open the site in the app's language the first time (the site keeps the
+// visitor's own choice in localStorage after that).
+function languageScript(): string {
+  const lang = getCurrentLanguage();
+  const site = lang === 'en' || lang === 'de' ? lang : 'he';
+  return `try{if(!localStorage.getItem('shiurim_wien_lang'))localStorage.setItem('shiurim_wien_lang','${site}')}catch(e){};true;`;
+}
 
 export default function ShiurimScreen() {
   const router = useRouter();
@@ -49,6 +58,7 @@ export default function ShiurimScreen() {
           <WebView
             ref={web}
             source={{ uri: SITE }}
+            injectedJavaScriptBeforeContentLoaded={languageScript()}
             style={{ flex: 1, backgroundColor: Colors.background }}
             onLoadEnd={() => setLoading(false)}
             onError={() => { setLoading(false); setFailed(true); }}

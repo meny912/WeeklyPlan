@@ -197,7 +197,7 @@ export function getEventTypeLabel(type: EventType): string {
     case 'geula': return 'גאולה';
     case 'birthday': return 'יום הולדת';
     case 'holiday': return 'חג / מועד';
-    default: return '';
+    default: return 'יום מיוחד';
   }
 }
 
