@@ -11,7 +11,7 @@ export interface TextSection {
   verse: number;
   text: string;
   /** Shnayim Mikra rows (verse, verse again, Targum Onkelos) and Rashi rows. */
-  kind?: 'mikra' | 'mikra2' | 'targum' | 'rashi';
+  kind?: 'mikra' | 'mikra2' | 'targum' | 'rashi' | 'trans';
   /** Rashi: the dibbur hamatchil, shown in bold before the comment. */
   lead?: string;
 }

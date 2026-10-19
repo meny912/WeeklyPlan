@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BookContent, TextSection } from '@/services/sefariaService';
 
 const CACHE_PREFIX = 'shnayim_v1_';
-const MASORAH = 'hebrew|Miqra according to the Masorah';
+export const MASORAH = 'hebrew|Miqra according to the Masorah';
 
 const ALIYAH_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
 
@@ -128,7 +128,7 @@ function parseRef(ref: string): { book: string; from: Pos; to: Pos } {
   return { book: m[1], from, to };
 }
 
-async function fetchVerses(ref: string, version?: string): Promise<Verse[]> {
+export async function fetchVerses(ref: string, version?: string): Promise<Verse[]> {
   const { from } = parseRef(ref);
   const q = version ? `?version=${encodeURIComponent(version)}` : '';
   const resp = await fetch(`https://www.sefaria.org/api/v3/texts/${encodeURIComponent(ref)}${q}`, {

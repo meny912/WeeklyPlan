@@ -4,11 +4,11 @@
 //   Raschi  – Selig Bamberger, Raschis Pentateuchkommentar (Hamburg 1922; Bereschit only)
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BookContent, TextSection } from '@/services/sefariaService';
-import { fetchParsha } from '@/services/shnayimMikraService';
+import { fetchParsha, fetchVerses, MASORAH } from '@/services/shnayimMikraService';
 
 const CHUMASH_DE = 'Der Pentateuch, übersetzt und erläutert von Samson Raphael Hirsch. Frankfurt am Main, 1867-1878 [de]';
 const RASHI_DE = 'Raschis Pentateuchkommentar, trans. Rabb. Dr. Selig Bamberger, Hamburg, 1922. Edited by Igor Itkin [de]';
-const CACHE = 'german_v1_';
+const CACHE = 'german_v2_';
 
 const ALIYAH_DE = ['Erster', 'Zweiter', 'Dritter', 'Vierter', 'Fünfter', 'Sechster', 'Siebter'];
 
@@ -74,7 +74,8 @@ export async function fetchChumashGerman(date: Date = new Date()): Promise<BookC
   const ref = parsha.aliyot[idx] ?? parsha.aliyot[0];
   return cached(`chumash_${ref}`, async () => {
     const { book, from } = parseRef(ref);
-    const [text, rashi] = await Promise.all([
+    const [hebrew, text, rashi] = await Promise.all([
+      fetchVerses(ref, MASORAH).catch(() => []),
       fetchVersion(ref, CHUMASH_DE),
       fetchVersion(`Rashi on ${ref}`, RASHI_DE).catch(() => null),
     ]);
@@ -83,10 +84,13 @@ export async function fetchChumashGerman(date: Date = new Date()): Promise<BookC
       const list = (Array.isArray(r.value) ? r.value : [r.value]).filter(Boolean).map((c: string) => c);
       if (list.length) rashiAt.set(`${r.ch}:${r.v}`, list);
     }
+    const hebrewAt = new Map(hebrew.map((h) => [`${h.ch}:${h.v}`, h.text]));
     const rows: TextSection[] = [];
     for (const v of flatten(text, from)) {
       if (!v.value) continue;
-      rows.push({ verse: v.v, text: clean(String(v.value)), kind: 'mikra' });
+      const he = hebrewAt.get(`${v.ch}:${v.v}`);
+      if (he) rows.push({ verse: v.v, text: he, kind: 'mikra' });   // original, with ta'amim
+      rows.push({ verse: v.v, text: clean(String(v.value)), kind: he ? 'trans' : 'mikra' });
       for (const c of rashiAt.get(`${v.ch}:${v.v}`) ?? []) {
         const m = c.match(/^\s*<b>([\s\S]*?)<\/b>\s*([\s\S]*)$/);
         rows.push({ verse: v.v, text: clean(m ? m[2] : c), lead: m ? clean(m[1]) : undefined, kind: 'rashi' });

@@ -59,6 +59,16 @@ function VerseRow({ verse, text, fontSize, kind, lead, ltr }: { verse: number; t
       </View>
     );
   }
+  if (kind === 'trans') {
+    // German translation right under the Hebrew verse
+    const size = fontSize - 1;
+    return (
+      <View style={[verseStyles.row, verseStyles.rowTargum]}>
+        <Text style={verseStyles.tag} />
+        <Text style={[verseStyles.text, verseStyles.targumText, verseStyles.ltr, { fontSize: size, lineHeight: size * 1.6 }]}>{text}</Text>
+      </View>
+    );
+  }
   if (kind === 'mikra2' || kind === 'targum') {
     const isTargum = kind === 'targum';
     const size = isTargum ? fontSize - 2 : fontSize;
@@ -126,7 +136,7 @@ function BookSection({ content, accentColor, fontSize }: { content: BookContent;
         ) : null}
       </View>
       {content.sections.map((s, i) => (
-        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} lead={s.lead} ltr={content.lang === 'de'} />
+        <VerseRow key={i} verse={s.verse} text={s.text} fontSize={fontSize} kind={s.kind} lead={s.lead} ltr={content.lang === 'de' && !(s.kind === 'mikra' && /[\u0590-\u05FF]/.test(s.text))} />
       ))}
     </View>
   );
@@ -344,7 +354,7 @@ export default function ReaderScreen() {
   };
 
   const totalVerses = contents.reduce(
-    (sum, c) => sum + c.sections.filter(s => s.kind !== 'mikra2' && s.kind !== 'targum' && s.kind !== 'rashi').length,
+    (sum, c) => sum + c.sections.filter(s => s.kind !== 'mikra2' && s.kind !== 'targum' && s.kind !== 'rashi' && s.kind !== 'trans').length,
     0,
   );
 
